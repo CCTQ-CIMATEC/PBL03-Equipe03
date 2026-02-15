@@ -1,0 +1,104 @@
+module riscv_core (
+    input  logic clk,
+    input  logic rst_n,
+
+    input  logic [31:0] instr,
+    input  logic [31:0] readdata,
+
+    output logic [31:0] pc,
+    output logic        memwrite,
+    output logic [31:0] aluresult,
+    output logic [31:0] writedata
+
+);
+    import riscv_pkg::*;
+
+    // SINAIS INTERNOS PROGRAM COUNTER
+    logic [31:0] pcnext;
+    logic [31:0] pcplus4;
+    logic [31:0] pctarget;
+    logic [31:0] result;
+    logic        branch;
+
+    //SINAIS EXTEND
+    logic [31:0] immext;
+
+    // SINAIS INTERNOS ULA
+    logic [31:0] srca;
+    logic [31:0] srcb;
+    logic        zero;
+
+    // SINAIS DE CONTROLE
+    logic pcsrc;
+    logic resultsrc;
+    logic alusrc;   
+    logic regwrite;
+    logic [1:0] aluop;
+    logic [1:0] immsrc;
+    alu_ops_t aluctrl;
+    
+    //
+    program_counter u_program_counter (
+        .clk(clk), .rst_n(rst_n), .pcnext(pcnext), .pc(pc)
+    );
+
+    assign pcplus4  = pc + 32'd4;
+    assign pctarget = pc + immext;
+
+    //MUX PROGRAM COUNTER
+    assign pcsrc = branch & zero;
+    assign pcnext  = (pcsrc) ? pctarget : pcplus4;
+    
+
+    // REG FILE 
+    reg_file u_reg_file (
+        .clk(clk),
+        .we3(regwrite),
+        .a1(instr[19:15]), 
+        .a2(instr[24:20]), 
+        .a3(instr[11:7]),
+        .rd1(srca),
+        .rd2(writedata),
+        .wd3(result)
+    );
+
+    //IMEDDIATE GENERATOR
+    extend u_extend (
+        .instr(instr[31:7]), .immsrc(immsrc), .immext(immext)
+    );
+
+    // MUX DA ULA
+    assign srcb = alusrc ? immext : writedata;
+
+    // ULA
+    alu u_alu(
+        .a(srca), .b(srcb), .ctrl(aluctrl), .result(aluresult), .zero(zero)
+    );
+
+    // MUX WRITE BACK
+    assign result = resultsrc ? readdata : aluresult; // Implementar: mais fontes dos resultados, pode vir de mais lugares!
+
+    // UNIDADE DE CONTROLE
+    main_decoder u_main_decoder (
+        .op(instr[6:0]),
+        .branch(branch),
+        .resultsrc(resultsrc),
+        .memwrite(memwrite),
+        .alusrc(alusrc),
+        .immsrc(immsrc),
+        .regwrite(regwrite),
+        .alu_op_type(aluop)
+    );
+
+    alu_decoder u_alu_decoder (
+        .funct3(instr[14:12]),
+        .funct7_b5(instr[30]),
+        .opb5(instr[5]),
+        .alu_op_type(aluop),
+        .alu_ctrl(aluctrl)
+    );
+
+
+
+
+endmodule
