@@ -3,7 +3,9 @@ module alu (
     input  logic [31:0] b,
     input  riscv_pkg::alu_ops_t ctrl,
     output logic [31:0] result,
-    output logic        zero
+    output logic        zero,
+    output logic        is_less,
+    output logic        is_less_u
 );
     import riscv_pkg::*;
 
@@ -24,17 +26,19 @@ module alu (
     assign n   = sum[31];               // capturando o bit mais significativo para checagem de sinal
     assign sum = is_sub ? ({1'b0, a} - {1'b0, b}) : ({1'b0, a} + {1'b0, b}); // estrutura única para tratar
     assign v   = ((a[31] != b[31]) && (a[31] != sum[31])); // verifica se houve overflow na subtração, implementar para a soma.
-    assign brw   = sum[32];
+    //assign brw   = sum[32];
+    assign is_less = n ^ v;  // comparação com sinal
+    assign is_less_u = sum[32]; // comparação sem sinal 
 
     always_comb begin
         case (ctrl)
-        ALU_ADD:  result = sum;
-        ALU_SUB:  result = sum;
+        ALU_ADD:  result = sum[31:0];
+        ALU_SUB:  result = sum[31:0];
         ALU_AND:  result = a & b;
         ALU_OR:   result = a | b;
         ALU_XOR:  result = a ^ b;
-        ALU_SLT:  result = {31'b0, (n^v)};
-        ALU_SLTU: result = {31'b0, sum[32]};
+        ALU_SLT:  result = {31'b0, is_less};
+        ALU_SLTU: result = {31'b0, is_less_u};
         default:  result = 32'b0;
         endcase
     end

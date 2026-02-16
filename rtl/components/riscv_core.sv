@@ -27,6 +27,8 @@ module riscv_core (
     logic [31:0] srca;
     logic [31:0] srcb;
     logic        zero;
+    logic     is_less;
+    logic   is_less_u;
 
     // SINAIS DE CONTROLE
     logic pcsrc;
@@ -46,7 +48,7 @@ module riscv_core (
     assign pctarget = pc + immext;
 
     //MUX PROGRAM COUNTER
-    assign pcsrc = branch & zero;
+    //assign pcsrc = branch & zero;
     assign pcnext  = (pcsrc) ? pctarget : pcplus4;
     
 
@@ -72,7 +74,13 @@ module riscv_core (
 
     // ULA
     alu u_alu(
-        .a(srca), .b(srcb), .ctrl(aluctrl), .result(aluresult), .zero(zero)
+        .a(srca), 
+        .b(srcb), 
+        .ctrl(aluctrl), 
+        .result(aluresult), 
+        .zero(zero),
+        .is_less(is_less),
+        .is_less_u(is_less_u)
     );
 
     // MUX WRITE BACK
@@ -97,6 +105,16 @@ module riscv_core (
         .alu_op_type(aluop),
         .alu_ctrl(aluctrl)
     );
+
+    branch_control u_branch_control(
+        .funct3(instr[14:12]),
+        .branch(branch),
+        .zero(zero),
+        .is_less(is_less),
+        .is_less_u(is_less_u),
+        .pcsrc(pcsrc)
+    );
+
 
 
 
