@@ -39,6 +39,9 @@ module alu (
         ALU_XOR:  result = a ^ b;
         ALU_SLT:  result = {31'b0, is_less};
         ALU_SLTU: result = {31'b0, is_less_u};
+        ALU_SLL:  result = a << b[4:0];           // só se pode deslocar no máximo 32 vezes, 2^5 ou b[4:0]
+        ALU_SRL:  result = a >> b[4:0];
+        ALU_SRA:  result = $signed(a) >>> b[4:0]; // pensar em uma forma mais "hardware" de se implementar isso
         default:  result = 32'b0;
         endcase
     end
