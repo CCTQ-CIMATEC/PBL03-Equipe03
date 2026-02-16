@@ -25,7 +25,7 @@ module top_tb;
 
         // 3. Roda por um tempo fixo
         // Como não temos instruções de 'halt', rodamos por tempo ou ciclos
-        #200; 
+        #500; 
 
         $display("=== Simulacao Finalizada ===");
         $finish;
