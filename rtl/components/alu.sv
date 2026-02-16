@@ -5,15 +5,33 @@ module alu (
     output logic [31:0] result,
     output logic        zero
 );
-    import riscv_pkg::*; 
+    import riscv_pkg::*;
+
+    // SINAIS INTERNOS
+    logic [31:0] sum;
+    logic        n;      // Pega result[31] para verificar o sinal do resultado
+    logic        v;      // detecta se ocorreu ou não um overflow
+    logic        is_sub; // verifica se a operação recai em uma subtração
+
+    always_comb begin 
+        if(ctrl == ALU_SUB || ctrl == ALU_SLT) // futuramente acredito que outras instruções recairão aqui
+            is_sub = 1'b1;
+        else 
+            is_sub = 1'b0;
+    end
+
+    assign n   = sum[31];               // capturando o bit mais significativo para checagem de sinal
+    assign sum = is_sub ? (a - b) : (a + b); // estrutura única para tratar
+    assign v   = ((a[31] != b[31]) && (a[31] != sum[31])); // verifica se houve overflow na subtração, implementar para a soma.
 
     always_comb begin
         case (ctrl)
-        ALU_ADD: result = a + b;
-        ALU_SUB: result = a - b;
+        ALU_ADD: result = sum;
+        ALU_SUB: result = sum;
         ALU_AND: result = a & b;
         ALU_OR:  result = a | b;
         ALU_XOR: result = a ^ b;
+        ALU_SLT: result = {30'b0, (n^v)};
         default: result = 32'b0;
         endcase
     end

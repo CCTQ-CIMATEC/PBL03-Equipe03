@@ -23,6 +23,7 @@ module alu_decoder (
             FUNCT3_AND: alu_ctrl = ALU_AND;
             FUNCT3_OR:  alu_ctrl = ALU_OR;
             FUNCT3_XOR: alu_ctrl = ALU_XOR;
+            FUNCT3_SLT: alu_ctrl = ALU_SLT;
             endcase
         end
         default: alu_ctrl = ALU_ADD;
