@@ -19,6 +19,11 @@ module riscv_core (
     logic [31:0] pctarget;
     logic [31:0] result;
     logic        branch;
+    logic        jump;
+    logic        is_jalr;
+    logic        [1:0] pc_mux;
+
+    
 
     //SINAIS EXTEND
     logic [31:0] immext;
@@ -29,15 +34,18 @@ module riscv_core (
     logic        zero;
     logic     is_less;
     logic   is_less_u;
+    
 
     // SINAIS DE CONTROLE
     logic pcsrc;
-    logic resultsrc;
+    logic [1:0] resultsrc;
     logic alusrc;   
     logic regwrite;
     logic [1:0] aluop;
     logic [1:0] immsrc;
     alu_ops_t aluctrl;
+
+    
     
     //
     program_counter u_program_counter (
@@ -49,7 +57,17 @@ module riscv_core (
 
     //MUX PROGRAM COUNTER
     //assign pcsrc = branch & zero;
-    assign pcnext  = (pcsrc) ? pctarget : pcplus4;
+    assign pc_mux = {is_jalr, (pcsrc || jump)};
+    always_comb begin 
+        case(pc_mux)
+        2'b00:   pcnext = pcplus4;
+        2'b01:   pcnext = pctarget;
+        2'b10:   pcnext = aluresult;
+        2'b11:   pcnext = aluresult;    // retirar isso
+        default: pcnext = pcplus4;
+        endcase
+    end
+    //assign pcnext  = (pcsrc) ? pctarget : pcplus4; // pensar um pouco mais nessa lógica
     
 
     // REG FILE 
@@ -84,12 +102,21 @@ module riscv_core (
     );
 
     // MUX WRITE BACK
-    assign result = resultsrc ? readdata : aluresult; // Implementar: mais fontes dos resultados, pode vir de mais lugares!
+    always_comb begin 
+        case(resultsrc)
+        2'b00:   result = aluresult;
+        2'b01:   result = readdata;
+        2'b10:   result = pcplus4;
+        default: result = 32'b0;
+        endcase
+    end
 
     // UNIDADE DE CONTROLE
     main_decoder u_main_decoder (
         .op(instr[6:0]),
         .branch(branch),
+        .jump(jump),
+        .is_jalr(is_jalr),
         .resultsrc(resultsrc),
         .memwrite(memwrite),
         .alusrc(alusrc),
