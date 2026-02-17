@@ -58,10 +58,12 @@ package  riscv_pkg;
         ALU_AND  = 4'b0010,
         ALU_OR   = 4'b0011,
         ALU_XOR  = 4'b0100,
-        ALU_SLT  = 4'b0101,   // slt, slti
-        ALU_SLTU = 4'b0110  // sltu, sltui
-        //ALU_SRL = 4'b0110;
-        //ALU_SRA = 4'b0111;
+        ALU_SLT  = 4'b0101,  // slt, slti
+        ALU_SLTU = 4'b0110,  // sltu, sltui
+        ALU_SLL  = 4'b0111,  // sll, slli
+        ALU_SRL  = 4'b1000,  // srl, srli
+        ALU_SRA  = 4'b1001   // sra, srai
+        
     } alu_ops_t;
 
 endpackage

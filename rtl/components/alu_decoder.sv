@@ -25,6 +25,13 @@ module alu_decoder (
             FUNCT3_XOR:        alu_ctrl = ALU_XOR;
             FUNCT3_SLT:        alu_ctrl = ALU_SLT;
             FUNCT3_SLTU_SLTUI: alu_ctrl = ALU_SLTU;
+            FUNCT3_SLL:        alu_ctrl = ALU_SLL; // sll, slli
+            FUNCT3_SRL_SRA: begin 
+                if(funct7_b5)
+                    alu_ctrl = ALU_SRA;            // sra, srai
+                else
+                    alu_ctrl = ALU_SRL;            // srl, srli
+            end
             endcase
         end
         default: alu_ctrl = ALU_ADD;
