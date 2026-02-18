@@ -13,6 +13,11 @@ module top_tb;
     always #5 clk = ~clk;
 
     initial begin
+        $dumpfile("ondas.vcd"); 
+        $dumpvars(0, u_top); 
+    end
+
+    initial begin
         $display("=== Iniciando Simulacao do Processador RISC-V ===");
 
         // 1. Inicialização

@@ -1,0 +1,36 @@
+#-----------------------------------------------------------
+# Vivado v2025.2 (64-bit)
+# SW Build 6299465 on Fri Nov 14 12:34:56 MST 2025
+# IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+# SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+# Start of session at: Wed Feb 18 12:14:48 2026
+# Process ID         : 136068
+# Current directory  : /home/jose/Área de trabalho/bare_riscv
+# Command line       : vivado
+# Log file           : /home/jose/Área de trabalho/bare_riscv/vivado.log
+# Journal file       : /home/jose/Área de trabalho/bare_riscv/vivado.jou
+# Running On         : N305-3107928
+# Platform           : Ubuntu
+# Operating System   : Ubuntu 24.04.4 LTS
+# Processor Detail   : 13th Gen Intel(R) Core(TM) i7-13650HX
+# CPU Frequency      : 800.915 MHz
+# CPU Physical cores : 14
+# CPU Logical cores  : 20
+# Host memory        : 16434 MB
+# Swap memory        : 4294 MB
+# Total Virtual      : 20729 MB
+# Available Virtual  : 12278 MB
+#-----------------------------------------------------------
+start_gui
+load_feature simulator
+open_wave_database {/home/jose/Área de trabalho/bare_riscv/work/top_tb_snap.wdb}
+add_wave {{/top_tb/u_top/u_riscv_core/u_reg_file/rf}} 
+current_wave_config {Untitled 1}
+add_wave {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[31]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[30]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[29]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[28]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[27]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[26]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[25]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[24]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[23]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[22]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[21]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[20]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[19]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[18]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[17]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[16]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[15]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[14]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[13]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[12]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[11]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[10]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[9]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[8]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[7]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[6]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[5]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[4]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[3]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[2]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[1]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[0]}} 
+add_wave {{/top_tb/u_top/u_riscv_core/u_reg_file/rf}} 
+add_wave {{/top_tb/u_top/u_riscv_core/u_reg_file/rf}} 
+current_wave_config {Untitled 3}
+add_wave {{/top_tb/u_top/u_riscv_core/u_reg_file/clk}} 
+add_wave {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[31]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[30]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[29]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[28]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[27]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[26]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[25]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[24]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[23]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[22]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[21]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[20]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[19]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[18]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[17]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[16]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[15]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[14]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[13]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[12]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[11]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[10]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[9]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[8]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[7]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[6]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[5]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[4]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[3]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[2]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[1]}} {{/top_tb/u_top/u_riscv_core/u_reg_file/rf[0]}} 
+close_sim
+close_project

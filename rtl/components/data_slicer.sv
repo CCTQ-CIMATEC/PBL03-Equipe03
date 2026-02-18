@@ -8,7 +8,7 @@ module data_slicer (
     import riscv_pkg::*;
 
     // CONTAINERS PARA AS PORCOES DE MEMORIAA
-    logic [6:0]  byte_data;
+    logic [7:0]  byte_data;
     logic [15:0] half_data;
 
     // SELECIONA QUAL BYTE DEVE SER PEGO DE ACORDO COM OS 2 BITS MEMOS SIGNIFICATIVOS  DO ENDERECO CALCULADOS PELA ULA
@@ -29,6 +29,7 @@ module data_slicer (
         endcase
     end
 
+    // SELECIONA A PORCAO DE DADOS DE ACORDO COM A INSTRUCAO
     always_comb begin 
         case(funct3)
             FUNCT3_B:  data = {{24{byte_data[7]}}, byte_data};

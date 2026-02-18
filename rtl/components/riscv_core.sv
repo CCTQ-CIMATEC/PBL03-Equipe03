@@ -23,7 +23,8 @@ module riscv_core (
     logic        is_jalr;
     logic        [1:0] pc_mux;
 
-    
+    // SAIDA DATA SLICER
+    logic [31:0] s_data;
 
     //SINAIS EXTEND
     logic [31:0] immext;
@@ -105,7 +106,7 @@ module riscv_core (
     always_comb begin 
         case(resultsrc)
             2'b00:   result = aluresult;
-            2'b01:   result = readdata;
+            2'b01:   result = s_data;
             2'b10:   result = pcplus4;
         default: result = 32'b0;
         endcase
@@ -142,8 +143,12 @@ module riscv_core (
         .pcsrc(pcsrc)
     );
 
-
-
+    data_slicer u_data_slicer(
+        .readdata(readdata),
+        .funct3(instr[14:12]),
+        .d_select(aluresult[1:0]),
+        .data(s_data)
+    );
 
 
 endmodule
