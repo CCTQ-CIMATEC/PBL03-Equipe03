@@ -104,9 +104,9 @@ module riscv_core (
     // MUX WRITE BACK
     always_comb begin 
         case(resultsrc)
-        2'b00:   result = aluresult;
-        2'b01:   result = readdata;
-        2'b10:   result = pcplus4;
+            2'b00:   result = aluresult;
+            2'b01:   result = readdata;
+            2'b10:   result = pcplus4;
         default: result = 32'b0;
         endcase
     end
