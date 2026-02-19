@@ -39,11 +39,11 @@ module riscv_core (
 
     // SINAIS DE CONTROLE
     logic pcsrc;
-    logic [1:0] resultsrc;
+    logic [2:0] resultsrc;
     logic alusrc;   
     logic regwrite;
     logic [1:0] aluop;
-    logic [1:0] immsrc;
+    logic [2:0] immsrc;
     alu_ops_t aluctrl;
 
     
@@ -105,9 +105,11 @@ module riscv_core (
     // MUX WRITE BACK
     always_comb begin 
         case(resultsrc)
-            2'b00:   result = aluresult;
-            2'b01:   result = s_data;
-            2'b10:   result = pcplus4;
+            3'b000:   result = aluresult;
+            3'b001:   result = s_data;
+            3'b010:   result = pcplus4;
+            3'b011:   result = immext;
+            3'b100:   result = pctarget;
         default: result = 32'b0;
         endcase
     end
