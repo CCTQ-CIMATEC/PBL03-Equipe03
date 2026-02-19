@@ -39,8 +39,8 @@ module top_tb;
     // Monitoramento (Opcional: Mostra o que está acontecendo a cada clock)
     always @(posedge clk) begin
         if (rst_n) begin
-            $display("Time: %0t | PC: %h | Instr: %h | ALU Res: %h | WriteData: %h | MemWrite: %b", 
-                     $time, u_top.pc, u_top.instr, u_top.aluresult, u_top.writedata, u_top.memwrite);
+            $display("Time: %0t | PC: %h | Instr: %h | ALU Res: %h | WriteData: %h | MemWrite_Enable: %b", 
+                     $time, u_top.pc, u_top.instr, u_top.aluresult, u_top.writedata, u_top.write_enable);
         end
     end
 

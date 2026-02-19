@@ -6,9 +6,11 @@ module riscv_core (
     input  logic [31:0] readdata,
 
     output logic [31:0] pc,
-    output logic        memwrite,
+    //output logic   memwrite,
+    output logic [3:0] write_enable,
     output logic [31:0] aluresult,
     output logic [31:0] writedata
+    
 
 );
     import riscv_pkg::*;
@@ -25,6 +27,11 @@ module riscv_core (
 
     // SAIDA DATA SLICER
     logic [31:0] s_data;
+
+    // SAIDA DATA MASKER
+    logic   memwrite;
+
+    logic [31:0] rd2_pure;
 
     //SINAIS EXTEND
     logic [31:0] immext;
@@ -79,7 +86,7 @@ module riscv_core (
         .a2(instr[24:20]), 
         .a3(instr[11:7]),
         .rd1(srca),
-        .rd2(writedata),
+        .rd2(rd2_pure),
         .wd3(result)
     );
 
@@ -89,7 +96,7 @@ module riscv_core (
     );
 
     // MUX DA ULA
-    assign srcb = alusrc ? immext : writedata;
+    assign srcb = alusrc ? immext : rd2_pure;
 
     // ULA
     alu u_alu(
@@ -152,5 +159,13 @@ module riscv_core (
         .data(s_data)
     );
 
+    data_masker u_data_masker(
+        .writedata_in(rd2_pure),
+        .funct3(instr[14:12]),
+        .d_select(aluresult[1:0]),
+        .we(memwrite),
+        .writedata_out(writedata),
+        .write_enable(write_enable)
+    );
 
 endmodule
