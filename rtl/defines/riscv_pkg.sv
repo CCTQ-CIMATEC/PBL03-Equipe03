@@ -10,7 +10,7 @@ package  riscv_pkg;
         OP_JAL    = 7'b1101111,
         OP_JALR   = 7'b1100111,
         OP_LUI    = 7'b0110111,
-        OP_AUI    = 7'b0010111
+        OP_AUIPC  = 7'b0010111
     } opcode_t;
 
     // FUNCT3 CODES
