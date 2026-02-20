@@ -14,7 +14,14 @@ module data_memory #(
     //    if(we)
     //        datamem[a[31:2]] <= wd; 
     //end
-
+    
+    // PREENCHENDO COM ZEROS
+    initial begin
+        for (int i = 0; i < DEPTH; i++) begin
+            datamem[i] = 32'b0;
+        end
+    end
+    
     always_ff @(posedge clk) begin
         if(we[0])  datamem[a[31:2]] [7:0] <= wd[7:0];
         if(we[1])  datamem[a[31:2]] [15:8] <= wd[15:8];
