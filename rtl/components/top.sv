@@ -9,7 +9,7 @@ logic [31:0] instr;
 logic [31:0] aluresult;
 logic [31:0] writedata; 
 logic [31:0] readdata;
-logic        memwrite;
+logic [3:0]  write_enable;
 
 riscv_core u_riscv_core (
     .clk(clk),
@@ -17,14 +17,14 @@ riscv_core u_riscv_core (
     .instr(instr),
     .readdata(readdata),
     .pc(pc),
-    .memwrite(memwrite),
+    .write_enable(write_enable),
     .aluresult(aluresult),
     .writedata(writedata)
 );
 
 data_memory u_data_memory(
     .clk(clk),
-    .we(memwrite),
+    .we(write_enable),
     .a(aluresult),
     .wd(writedata),
     .rd(readdata)

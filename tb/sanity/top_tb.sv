@@ -10,7 +10,7 @@ module top_tb;
     );
 
     // Gerador de Clock (10ns)
-    always #5 clk = ~clk;
+    always #10 clk = ~clk;
 
     initial begin
         $dumpfile("ondas.vcd"); 
@@ -29,8 +29,8 @@ module top_tb;
         rst_n = 1; // Solta o Reset (CPU começa a rodar)
 
         // 3. Roda por um tempo fixo
-        // Como não temos instruções de 'halt', rodamos por tempo ou ciclos
-        #500; 
+        // Aumentado para 2000ns (100 ciclos de clock) para dar tempo de rodar todas as 50 linhas!
+        #2000; 
 
         $display("=== Simulacao Finalizada ===");
         $finish;
@@ -39,8 +39,8 @@ module top_tb;
     // Monitoramento (Opcional: Mostra o que está acontecendo a cada clock)
     always @(posedge clk) begin
         if (rst_n) begin
-            $display("Time: %0t | PC: %h | Instr: %h | ALU Res: %h | WriteData: %h | MemWrite: %b", 
-                     $time, u_top.pc, u_top.instr, u_top.aluresult, u_top.writedata, u_top.memwrite);
+            $display("Time: %0t | PC: %h | Instr: %h | ALU Res: %h | WriteData: %h | MemWrite_Enable: %b", 
+                     $time, u_top.pc, u_top.instr, u_top.aluresult, u_top.writedata, u_top.write_enable);
         end
     end
 
