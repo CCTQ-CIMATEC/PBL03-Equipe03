@@ -1,8 +1,10 @@
+`timescale 1ns/1ps
+
 module data_memory #( 
     parameter DEPTH = 1024
 )(
     input  logic clk,
-    input  logic [3:0] we,          // write enable   
+    input  logic [3:0] we,    // write enable   
     input  logic [31:0] a,    // address
     input  logic [31:0] wd,   // data to write
     output logic [31:0] rd    // data read

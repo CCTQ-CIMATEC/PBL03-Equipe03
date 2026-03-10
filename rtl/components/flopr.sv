@@ -1,4 +1,8 @@
 //Flop genérico com rst assíncrono
+
+`timescale 1ns/1ps
+
+
 module flopr #(
     parameter WIDTH = 32  
 )(

@@ -1,4 +1,8 @@
 //Mux genérico 2to1
+
+`timescale 1ns/1ps
+
+
 module mux2 (
     input  logic [31:0] a,
     input  logic [31:0] b,

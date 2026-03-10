@@ -1,3 +1,6 @@
+`timescale 1ns/1ps
+
+
 module alu_decoder (
     input  logic [2:0] funct3, 
     input  logic       funct7_b5,

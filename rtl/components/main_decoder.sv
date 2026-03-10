@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module main_decoder (
     input  logic [6:0] op,
 

@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 package  riscv_pkg;
 
     // RISC-V OPCODE    

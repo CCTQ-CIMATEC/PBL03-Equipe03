@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module data_slicer (
     input  logic [31:0] readdata,
     input  logic [2:0]  funct3,

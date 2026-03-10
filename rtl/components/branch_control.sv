@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module branch_control (
     input  logic [2:0] funct3,
     input  logic       branch,
