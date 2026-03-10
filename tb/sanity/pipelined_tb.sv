@@ -18,14 +18,14 @@ module pipelined_tb();
     initial begin
         // Inicialização
         clk = 0;
-        rst = 1; // Ativa o reset (alto conforme seu código)
+            rst = 0; // Ativa o reset (alto conforme seu código)
 
-        $display("Iniciando Simulação...");
-        
-        // Mantém o reset por alguns ciclos
-        #20;
-        @(negedge clk);
-        rst = 0; // Desativa o reset
+            $display("Iniciando Simulação...");
+            
+            // Mantém o reset por alguns ciclos
+            #20;
+            @(negedge clk);
+            rst = 1; // Desativa o reset
         
         $display("Reset desativado. Executando programa...");
 

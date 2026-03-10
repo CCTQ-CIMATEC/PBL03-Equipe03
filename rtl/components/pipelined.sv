@@ -12,7 +12,7 @@ module pipelined (
     //----------------------------------------------------
 
     // SINAIS INTERNOS FETCH
-    logic [31:0] instrF; 
+    logic [31:0] instrF;
     logic [31:0] pcF;
     logic [31:0] pcplus4F;
 
@@ -110,53 +110,71 @@ module pipelined (
 
 
     // DECODE/EXECUTE REGISTER
-    always_ff @(posedge clk) begin
-        jumpE     <= jumpD;
-        branchE   <= branchD;
-        is_jalrE  <= is_jalrD;
-        regwriteE <= regwriteD;
-        resultsrcE <= resultsrcD;
-        memwriteE <= memwriteD;
-        aluctrlE  <= aluctrlD;
-        alusrcE   <= alusrcD;
+    always_ff @(posedge clk or negedge rst) begin
+        if(!rst) begin 
+            regwriteE  <= 1'b0;
+            memwriteE  <= 1'b0;
+            jumpE      <= 1'b0;
+            branchE    <= 1'b0;
+        end else begin
+            jumpE      <= jumpD;
+            branchE    <= branchD;
+            is_jalrE   <= is_jalrD;
+            regwriteE  <= regwriteD;
+            resultsrcE <= resultsrcD;
+            memwriteE  <= memwriteD;
+            aluctrlE   <= aluctrlD;
+            alusrcE    <= alusrcD;
 
-        rd1E      <= rd1D;
-        rd2E      <= rd2D;
-        funct3E   <= funct3D;
-        rdE       <= rdD;
-        pcE       <= pcD;
-        immextE   <= immextD;
-        pcplus4E  <= pcplus4D; 
-
+            rd1E       <= rd1D;
+            rd2E       <= rd2D;
+            funct3E    <= funct3D;
+            rdE        <= rdD;
+            pcE        <= pcD;
+            immextE    <= immextD;
+            pcplus4E   <= pcplus4D;
+        end
+         
     end
 
     // EXECUTE/MEMORY REGISTER
-    always_ff @(posedge clk) begin 
-        regwriteM  <= regwriteE;
-        resultsrcM <= resultsrcE;
-        memwriteM  <= memwriteE;
+    always_ff @(posedge clk) begin
+        if(!rst) begin 
+            regwriteM <= 1'b0;
+            memwriteM <= 1'b0;
+        end else begin 
+            regwriteM  <= regwriteE;
+            resultsrcM <= resultsrcE;
+            memwriteM  <= memwriteE;
 
-        aluresultM  <= aluresultE;
-        rd2M       <= rd2E;
-        funct3M    <= funct3E;
-        rdM        <= rdE;
-        pctargetM  <= pctargetE;
-        immextM    <= immextE;
-        pcplus4M   <= pcplus4E; 
+            aluresultM <= aluresultE;
+            rd2M       <= rd2E;
+            funct3M    <= funct3E;
+            rdM        <= rdE;
+            pctargetM  <= pctargetE;
+            immextM    <= immextE;
+            pcplus4M   <= pcplus4E;
+        end 
+ 
 
     end
 
     // MEMORY/WRITEBACK REGISTER
-    always_ff @(posedge clk) begin 
-        regwriteW  <= regwriteM;
-        resultsrcW <= resultsrcM;
+    always_ff @(posedge clk) begin
+        if(!rst) begin 
+            regwriteW <= 1'b0;
+        end else begin 
+            regwriteW  <= regwriteM;
+            resultsrcW <= resultsrcM;
 
-        aluresultW <= aluresultM;
-        dataW      <= dataM;
-        rdW        <= rdM;
-        pctargetW  <= pctargetM;
-        immextW    <= immextM;
-        pcplus4W   <= pcplus4M;
+            aluresultW <= aluresultM;
+            dataW      <= dataM;
+            rdW        <= rdM;
+            pctargetW  <= pctargetM;
+            immextW    <= immextM;
+            pcplus4W   <= pcplus4M;
+        end
+        
     end
 
 
