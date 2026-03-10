@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module riscv_core (
     input  logic clk,
     input  logic rst_n,

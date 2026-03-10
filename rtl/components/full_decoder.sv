@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module full_decoder (
     input  logic [31:0] instr,
 

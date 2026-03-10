@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module data_memory #( 
     parameter DEPTH = 1024
 )(

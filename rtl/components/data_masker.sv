@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module data_masker (
     input  logic [31:0] writedata_in,
     input  logic [2:0]  funct3,

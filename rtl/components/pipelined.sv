@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module pipelined (
     input logic clk,
     input logic rst
@@ -19,17 +21,19 @@ module pipelined (
     // control signals
     logic        jumpD;
     logic        branchD;
+    logic        is_jalrD;
     logic        regwriteD;
     logic [2:0 ] resultsrcD;
     logic        memwriteD;
-    logic [2:0]  aluctrlD;
+    riscv_pkg::alu_ops_t aluctrlD;
     logic        alusrcD;
+    logic [2:0]  immsrcD;
     // data signals
     logic [31:0] instrD;
     logic [31:0] rd1D;
     logic [31:0] rd2D;
     logic [2:0 ] funct3D;
-    logic [31:0] rdD;
+    logic [4:0 ] rdD;
     logic [31:0] immextD;
     logic [31:0] pcD;
     logic [31:0] pcplus4D;
@@ -38,17 +42,18 @@ module pipelined (
     // control signals
     logic        jumpE;
     logic        branchE;
+    logic        is_jalrE;
     logic        regwriteE;
     logic [2:0 ] resultsrcE;
     logic        memwriteE;
-    logic [2:0]  aluctrlE;
+    riscv_pkg::alu_ops_t  aluctrlE;
     logic        alusrcE;
     // data signals
     logic [31:0] instrE;
     logic [31:0] rd1E;
     logic [31:0] rd2E;
     logic [2:0 ] funct3E;
-    logic [31:0] rdE;
+    logic [4:0 ] rdE;
     logic [31:0] immextE;
     logic [31:0] pcE;
     logic [31:0] pcplus4E;
@@ -58,14 +63,14 @@ module pipelined (
     //SINAIS INTERNOS MEMORY
     // control signals
     logic        regwriteM;
-    logic        resulsrcM;
+    logic [2:0 ] resultsrcM;
     logic        memwriteM;
 
     // data signals
     logic [31:0]  aluresultM;
     logic [31:0]  rd2M;
     logic [2:0 ]  funct3M;
-    logic [31:0]  rdM;
+    logic [4:0 ]  rdM;
     logic [31:0]  pctargetM;
     logic [31:0]  immextM;
     logic [31:0]  pcplus4M;
@@ -75,12 +80,12 @@ module pipelined (
     // SINAIS INTERNOS WRITEBACK
     // control signals
     logic         regwriteW;
-    logic         resultsrcW;
+    logic [2:0]   resultsrcW;
 
     // data signals
     logic [31:0]  aluresultW;
     logic [31:0]  dataW;
-    logic [31:0]  rdW;
+    logic [4:0 ]  rdW;
     logic [31:0]  pctargetW;
     logic [31:0]  immextW;
     logic [31:0]  pcplus4W;
@@ -91,19 +96,26 @@ module pipelined (
     //----------------------------------------------------
 
     // FETCH/DECODE REGISTER
-    always_ff @(posedge clk) begin 
-        instrD    <= instrF;
-        pcD       <= pcF;
-        pcplus4D  <= pcplus4F;
+    always_ff @(posedge clk or negedge rst) begin 
+        if (!rst) begin
+            instrD    <= 32'h00000013; 
+            pcD       <= 32'b0;
+            pcplus4D  <= 32'b0;
+        end else begin
+            instrD    <= instrF;
+            pcD       <= pcF;
+            pcplus4D  <= pcplus4F;
+        end
     end
 
 
     // DECODE/EXECUTE REGISTER
-    always_ff @(posedgeclk) begin
+    always_ff @(posedge clk) begin
         jumpE     <= jumpD;
         branchE   <= branchD;
+        is_jalrE  <= is_jalrD;
         regwriteE <= regwriteD;
-        resulsrcE <= resultsrcD;
+        resultsrcE <= resultsrcD;
         memwriteE <= memwriteD;
         aluctrlE  <= aluctrlD;
         alusrcE   <= alusrcD;
@@ -124,12 +136,12 @@ module pipelined (
         resultsrcM <= resultsrcE;
         memwriteM  <= memwriteE;
 
-        aluresulM  <= aluresultE;
+        aluresultM  <= aluresultE;
         rd2M       <= rd2E;
         funct3M    <= funct3E;
         rdM        <= rdE;
         pctargetM  <= pctargetE;
-        immextM    <= immextE
+        immextM    <= immextE;
         pcplus4M   <= pcplus4E; 
 
     end
@@ -139,7 +151,7 @@ module pipelined (
         regwriteW  <= regwriteM;
         resultsrcW <= resultsrcM;
 
-        aluresultW <= aluresulM;
+        aluresultW <= aluresultM;
         dataW      <= dataM;
         rdW        <= rdM;
         pctargetW  <= pctargetM;
@@ -152,7 +164,162 @@ module pipelined (
     //                DATAPATH E CONTROLE               //
     //----------------------------------------------------
 
-    
+
+    // CONTROL UNIT
+    // SINAIS CONTROL_UNIT
+
+    full_decoder u_full_decoder (
+        .instr(instrD),
+        .jump(jumpD),
+        .branch(branchD),
+        .regwrite(regwriteD),
+        .resultsrc(resultsrcD),
+        .memwrite(memwriteD),
+        .aluctrl(aluctrlD),
+        .alusrc(alusrcD),
+        .immsrc(immsrcD),
+        .is_jalr(is_jalrD),
+        .funct3(funct3D)    
+
+    );
+
+    // PROGRAM COUNTER
+    // SINAIS PROGRAM COUNTER
+    logic        pcsrc;
+    logic [31:0] pcnext;
+    logic [31:0] pc;
+    logic [1:0]  pcmux;
+
+    assign pcmux = {is_jalrE, (pcsrc || jumpE)};  
+
+    assign pcplus4F  = pc + 32'd4;
+    assign pctargetE = pcE + immextE;
+    always_comb begin 
+        case(pcmux) 
+            2'b00:   pcnext = pcplus4F;
+            2'b01:   pcnext = pctargetE;
+            2'b10:   pcnext = aluresultE;
+            2'b11:   pcnext = aluresultE;    
+            default: pcnext = pcplus4F; 
+        endcase
+    end
+
+    program_counter u_program_counter (
+        .clk(clk), .rst_n(rst), .pcnext(pcnext), .pc(pc)
+    );
+
+    assign pcF = pc;
+
+    // ULA
+    // SINAIS ULA
+    logic         zero;
+    logic         is_less;
+    logic         is_less_u;
+    logic [31:0]  srcb;
+    assign srcb = alusrcE ? immextE : rd2E;
+
+    alu u_alu(
+        .a(rd1E), 
+        .b(srcb), 
+        .ctrl(aluctrlE), 
+        .result(aluresultE), 
+        .zero(zero),
+        .is_less(is_less),
+        .is_less_u(is_less_u)
+    );
+
+    // BRANCH CONTROL
+    // SINAIS BRANCH CONTROL
+
+    branch_control u_branch_control(
+        .funct3(funct3E),
+        .branch(branchE),
+        .zero(zero),
+        .is_less(is_less),
+        .is_less_u(is_less_u),
+        .pcsrc(pcsrc)
+    );
+
+    // INSTRUCTION MEMORY
+    // SINAIS INSTRUCTION MEMORY
+
+    instruction_memory u_instruction_memory(
+        .a(pc),
+        .rd(instrF)
+    );
+    // REGFILE
+    // SINAIS REGFILE
+    logic [31:0] resultW;
+
+    reg_file u_reg_file_n (
+        .clk(clk),
+        .we3(regwriteW),     // escrita somente no writeback e na borda negativa do clock, negedge
+        .a1(instrD[19:15]), 
+        .a2(instrD[24:20]), 
+        .a3(rdW),            // vindo do writeback rapaz
+        .rd1(rd1D),          // no single cycle: .rd1(srca),
+        .rd2(rd2D),          // no single cycle: .rd2(rd2_pure),
+        .wd3(resultW)        // não esquecer de declarar esse sinal e apagar o comentário
+    );
+
+    assign rdD = instrD[11:7];
+
+    // EXTEND
+    // SINAIS EXTEND
+    extend u_extend (
+        .instr(instrD[31:7]), 
+        .immsrc(immsrcD),     
+        .immext(immextD)
+    );
+
+    // DATA MASKER
+    // SINAIS DATA MASKER
+    logic [3:0 ]  writeenableM;
+    logic [31:0]  writedataM;
+
+    data_masker u_data_masker(
+        .writedata_in(rd2M),
+        .funct3(funct3M),
+        .d_select(aluresultM[1:0]),
+        .we(memwriteM),
+        .writedata_out(writedataM),
+        .write_enable(writeenableM)
+    );
+
+    // DATA MEMORY
+    // SINAIS DATA MEMORY
+    logic [31:0]  readdataM;
+
+    data_memory u_data_memory(
+        .clk(clk),
+        .we(writeenableM),
+        .a(aluresultM),
+        .wd(writedataM),
+        .rd(readdataM)
+    );
+
+    // DATA SLICER
+    // SINAIS DATA SLICER
+
+    data_slicer u_data_slicer(
+        .readdata(readdataM),
+        .funct3(funct3M),
+        .d_select(aluresultM[1:0]),
+        .data(dataM)
+    );
+
+    // MUX RESULTW
+    // SINAIS MUX RESULTW      
+    always_comb begin
+        case(resultsrcW)
+            3'b000:   resultW = aluresultW;
+            3'b001:   resultW = dataW;
+            3'b010:   resultW = pcplus4W;
+            3'b011:   resultW = immextW;
+            3'b100:   resultW = pctargetW;
+        default: resultW = 32'b0;
+        endcase 
+    end
 
 
 endmodule 

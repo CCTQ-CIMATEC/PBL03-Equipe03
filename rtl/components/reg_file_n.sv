@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module reg_file_n(
     input  logic       clk,
     input  logic       we3,
@@ -11,7 +13,7 @@ module reg_file_n(
     logic [31:0] rf [31:0];
 
     always_ff @(negedge clk) begin
-        if(we3)
+        if(we3 && (a3 != 5'b0))
             rf[a3] <= wd3;
     end
 
