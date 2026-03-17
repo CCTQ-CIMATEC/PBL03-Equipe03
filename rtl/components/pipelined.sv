@@ -7,6 +7,10 @@ module pipelined (
 
     import riscv_pkg::*;
 
+    //sinais que são usados antes de serem declarados, ajeitar depois
+    logic [31:0] resultW;
+
+
     //----------------------------------------------------
     //        SINAIS INTERNOS DE CONTROLE E DADOS       //
     //----------------------------------------------------
@@ -29,6 +33,8 @@ module pipelined (
     logic        alusrcD;
     logic [2:0]  immsrcD;
     // data signals
+    logic [4:0 ] rs1D;
+    logic [4:0 ] rs2D;
     logic [31:0] instrD;
     logic [31:0] rd1D;
     logic [31:0] rd2D;
@@ -49,6 +55,8 @@ module pipelined (
     riscv_pkg::alu_ops_t  aluctrlE;
     logic        alusrcE;
     // data signals
+    logic [4:0 ] rs1E;
+    logic [4:0 ] rs2E;
     logic [31:0] instrE;
     logic [31:0] rd1E;
     logic [31:0] rd2E;
@@ -110,13 +118,28 @@ module pipelined (
 
 
     // DECODE/EXECUTE REGISTER
+    assign  rs1D = instrD[19:15];
+    assign  rs2D = instrD[24:20];
+
     always_ff @(posedge clk or negedge rst) begin
         if(!rst) begin 
             regwriteE  <= 1'b0;
             memwriteE  <= 1'b0;
             jumpE      <= 1'b0;
             branchE    <= 1'b0;
+            immextE    <= 32'b0;
+            // coisa do gemini
+            rd1E       <= 32'b0;
+            rd2E       <= 32'b0;
+            immextE    <= 32'b0;
+            rs1E       <= 5'b0;
+            rs2E       <= 5'b0;
+            rdE        <= 5'b0;
+            pcE        <= 32'b0;
+            pcplus4E   <= 32'b0;
         end else begin
+            rs1E       <= rs1D;
+            rs2E       <= rs2D;
             jumpE      <= jumpD;
             branchE    <= branchD;
             is_jalrE   <= is_jalrD;
@@ -137,8 +160,10 @@ module pipelined (
          
     end
 
+    
+
     // EXECUTE/MEMORY REGISTER
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clk or negedge rst) begin
         if(!rst) begin 
             regwriteM <= 1'b0;
             memwriteM <= 1'b0;
@@ -160,9 +185,20 @@ module pipelined (
     end
 
     // MEMORY/WRITEBACK REGISTER
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clk or negedge rst) begin
         if(!rst) begin 
-            regwriteW <= 1'b0;
+            // from gemini
+            // Sinais de Controle
+            regwriteW  <= 1'b0;
+            resultsrcW <= 3'b0;
+
+            // Sinais de Dados
+            aluresultW <= 32'b0;
+            dataW      <= 32'b0;
+            rdW        <= 5'b0;
+            pctargetW  <= 32'b0;
+            immextW    <= 32'b0;
+            pcplus4W   <= 32'b0;
         end else begin 
             regwriteW  <= regwriteM;
             resultsrcW <= resultsrcM;
@@ -182,6 +218,20 @@ module pipelined (
     //                DATAPATH E CONTROLE               //
     //----------------------------------------------------
 
+    // HAZARD UNIT
+    // SINAIS HAZARD UNIT
+    logic [1:0]      fowardAE;
+    logic [1:0]      fowardBE;
+    hazard_unit u_hazard_unit (
+        .rs1E(rs1E),
+        .rs2E(rs2E),
+        .rdM(rdM),
+        .rdW(rdW),
+        .regwriteM(regwriteM),
+        .regwriteW(regwriteW),
+        .fowardAE(fowardAE),
+        .fowardBE(fowardBE)
+    );
 
     // CONTROL UNIT
     // SINAIS CONTROL_UNIT
@@ -228,16 +278,62 @@ module pipelined (
 
     assign pcF = pc;
 
+    always @(posedge clk) begin
+        $display("FETCH: pcF=%h, instrF=%h, pcplus4F=%h", pcF, instrF, pcplus4F);
+    end
+
     // ULA
     // SINAIS ULA
     logic         zero;
     logic         is_less;
     logic         is_less_u;
+    logic [31:0]  srca;
     logic [31:0]  srcb;
-    assign srcb = alusrcE ? immextE : rd2E;
+    logic [31:0]  srcb_mid;
+    assign srcb = alusrcE ? immextE : srcb_mid;
+
+    // fowarding srca mux
+    always_comb begin 
+        case(fowardAE)
+        2'b00:   srca = rd1E;
+        2'b01:   srca = aluresultM;
+        2'b10:   srca = resultW;
+        default: srca = rd1E;
+        endcase
+    end
+
+    // fowarding srcb mux
+    always_comb begin 
+        case(fowardBE)
+        2'b00:   srcb_mid = rd2E;
+        2'b01:   srcb_mid = aluresultM;
+        2'b10:   srcb_mid = resultW;
+        default: srcb_mid = rd2E;
+        endcase
+    end
+
+    always @(posedge clk) begin
+        $display("DECODE: instrD=%h, pcD=%h", instrD, pcD);
+    end
+
+    //----------------------------
+    // No execute stage
+    always @(posedge clk) begin
+        $display("EX: instr=%h, rs1E=%d, rs2E=%d, rdE=%d, fowardAE=%b, fowardBE=%b, srca=%h, srcb=%h", 
+                instrE, rs1E, rs2E, rdE, fowardAE, fowardBE, srca, srcb);
+    end
+    //----------------------------
+
+    //----------------------------
+    // No memory stage
+    always @(posedge clk) begin
+        $display("MEM: aluresultM=%h, rdM=%d, regwriteM=%b", aluresultM, rdM, regwriteM);
+    end
+    //----------------------------
+
 
     alu u_alu(
-        .a(rd1E), 
+        .a(srca), 
         .b(srcb), 
         .ctrl(aluctrlE), 
         .result(aluresultE), 
@@ -245,6 +341,13 @@ module pipelined (
         .is_less(is_less),
         .is_less_u(is_less_u)
     );
+
+    always @(posedge clk) begin
+    if (rdE == 5'd4) begin // Quando a instrução destino for x4
+        $display("DEBUG EX: rs1E=%d (val=%h), immextE=%h, aluresultE=%h, fowardAE=%b", 
+                 rs1E, srca, immextE, aluresultE, fowardAE);
+    end
+    end
 
     // BRANCH CONTROL
     // SINAIS BRANCH CONTROL
@@ -267,7 +370,7 @@ module pipelined (
     );
     // REGFILE
     // SINAIS REGFILE
-    logic [31:0] resultW;
+    
 
     reg_file u_reg_file_n (
         .clk(clk),
