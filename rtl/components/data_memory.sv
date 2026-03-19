@@ -32,4 +32,12 @@ module data_memory #(
     end
 
     assign rd = datamem[a[31:2]];
+
+    // Dentro do data_memory (opcional, para confirmar a escrita)
+    always @(posedge clk) begin
+        if (|we) begin
+            $display("MEM WRITE: addr=%h, data=%h, we=%b", 
+                    a, wd, we);
+        end
+    end
 endmodule 

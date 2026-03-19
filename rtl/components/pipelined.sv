@@ -9,6 +9,10 @@ module pipelined (
 
     //sinais que são usados antes de serem declarados, ajeitar depois
     logic [31:0] resultW;
+    logic        stallD;
+    logic        stallF;
+    logic        flushE;
+    logic [31:0] rd2_forwarded;
 
 
     //----------------------------------------------------
@@ -103,13 +107,18 @@ module pipelined (
     //             REGISTRADORES DE PIPELINE            //
     //----------------------------------------------------
 
+    
     // FETCH/DECODE REGISTER
     always_ff @(posedge clk or negedge rst) begin 
         if (!rst) begin
             instrD    <= 32'h00000013; 
             pcD       <= 32'b0;
             pcplus4D  <= 32'b0;
-        end else begin
+        end else if (stallD) begin  // stallD=1: TRAVA
+            instrD    <= instrD;
+            pcD       <= pcD;
+            pcplus4D  <= pcplus4D;
+        end else begin              // stallD=0: ATUALIZA
             instrD    <= instrF;
             pcD       <= pcF;
             pcplus4D  <= pcplus4F;
@@ -122,7 +131,7 @@ module pipelined (
     assign  rs2D = instrD[24:20];
 
     always_ff @(posedge clk or negedge rst) begin
-        if(!rst) begin 
+        if(!rst || flushE) begin 
             regwriteE  <= 1'b0;
             memwriteE  <= 1'b0;
             jumpE      <= 1'b0;
@@ -137,6 +146,9 @@ module pipelined (
             rdE        <= 5'b0;
             pcE        <= 32'b0;
             pcplus4E   <= 32'b0;
+            resultsrcE <= 3'b0;
+            aluctrlE   <= ALU_ADD; 
+            alusrcE    <= 1'b0;
         end else begin
             rs1E       <= rs1D;
             rs2E       <= rs2D;
@@ -173,7 +185,7 @@ module pipelined (
             memwriteM  <= memwriteE;
 
             aluresultM <= aluresultE;
-            rd2M       <= rd2E;
+            rd2M       <= rd2_forwarded;
             funct3M    <= funct3E;
             rdM        <= rdE;
             pctargetM  <= pctargetE;
@@ -223,14 +235,21 @@ module pipelined (
     logic [1:0]      fowardAE;
     logic [1:0]      fowardBE;
     hazard_unit u_hazard_unit (
+        .rs1D(rs1D),
+        .rs2D(rs2D),
         .rs1E(rs1E),
         .rs2E(rs2E),
+        .rdE(rdE),
         .rdM(rdM),
         .rdW(rdW),
         .regwriteM(regwriteM),
         .regwriteW(regwriteW),
+        .resultsrcE(resultsrcE),
         .fowardAE(fowardAE),
-        .fowardBE(fowardBE)
+        .fowardBE(fowardBE),
+        .stallF(stallF),
+        .stallD(stallD),
+        .flushE(flushE)
     );
 
     // CONTROL UNIT
@@ -273,14 +292,14 @@ module pipelined (
     end
 
     program_counter u_program_counter (
-        .clk(clk), .rst_n(rst), .pcnext(pcnext), .pc(pc)
+        .clk(clk), 
+        .rst_n(rst),
+        .ena(stallF),
+        .pcnext(pcnext), 
+        .pc(pc)
     );
 
     assign pcF = pc;
-
-    always @(posedge clk) begin
-        $display("FETCH: pcF=%h, instrF=%h, pcplus4F=%h", pcF, instrF, pcplus4F);
-    end
 
     // ULA
     // SINAIS ULA
@@ -312,26 +331,17 @@ module pipelined (
         endcase
     end
 
-    always @(posedge clk) begin
-        $display("DECODE: instrD=%h, pcD=%h", instrD, pcD);
+    // fowarding dado para store
+    always_comb begin
+        case (fowardBE)
+            2'b00:   rd2_forwarded = rd2E;
+            2'b01:   rd2_forwarded = aluresultM;
+            2'b10:   rd2_forwarded = resultW;
+            default: rd2_forwarded = rd2E;
+        endcase
     end
 
-    //----------------------------
-    // No execute stage
-    always @(posedge clk) begin
-        $display("EX: instr=%h, rs1E=%d, rs2E=%d, rdE=%d, fowardAE=%b, fowardBE=%b, srca=%h, srcb=%h", 
-                instrE, rs1E, rs2E, rdE, fowardAE, fowardBE, srca, srcb);
-    end
-    //----------------------------
-
-    //----------------------------
-    // No memory stage
-    always @(posedge clk) begin
-        $display("MEM: aluresultM=%h, rdM=%d, regwriteM=%b", aluresultM, rdM, regwriteM);
-    end
-    //----------------------------
-
-
+    
     alu u_alu(
         .a(srca), 
         .b(srcb), 
@@ -341,13 +351,6 @@ module pipelined (
         .is_less(is_less),
         .is_less_u(is_less_u)
     );
-
-    always @(posedge clk) begin
-    if (rdE == 5'd4) begin // Quando a instrução destino for x4
-        $display("DEBUG EX: rs1E=%d (val=%h), immextE=%h, aluresultE=%h, fowardAE=%b", 
-                 rs1E, srca, immextE, aluresultE, fowardAE);
-    end
-    end
 
     // BRANCH CONTROL
     // SINAIS BRANCH CONTROL
@@ -441,6 +444,81 @@ module pipelined (
         default: resultW = 32'b0;
         endcase 
     end
+
+    
+    //----------------------------------------------------
+    //                 DISPLAYS DE DEBUG                //
+    //----------------------------------------------------
+
+
+    always @(posedge clk) begin
+        $display("DECODE: instrD=%h, pcD=%h", instrD, pcD);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        $display("EX: instr=%h, rs1E=%d, rs2E=%d, rdE=%d, fowardAE=%b, fowardBE=%b, srca=%h, srcb=%h", 
+                instrE, rs1E, rs2E, rdE, fowardAE, fowardBE, srca, srcb);
+
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        $display("MEM: aluresultM=%h, rdM=%d, regwriteM=%b", aluresultM, rdM, regwriteM);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        if (memwriteM) begin
+            $display("STORE: addr=%h, data=%h, we=%b, funct3=%b", 
+                    aluresultM, writedataM, writeenableM, funct3M);
+        end
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        $display("MEM: aluresultM=%h, rd2M=%h, memwriteM=%b, regwriteM=%b, resultsrcM=%b",
+                aluresultM, rd2M, memwriteM, regwriteM, resultsrcM);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        if (memwriteE) begin
+            $display("EX SW: rs2E=%d, rd2E=%h, immextE=%h, alusrcE=%b, srcb=%h", 
+                    rs2E, rd2E, immextE, alusrcE, srcb);
+        end
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        $display("MEM UPDATE: rd2E_was=%h, rd2M_now=%h", rd2E, rd2M);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        $display("EX: aluresultM=%h, resultW=%h", aluresultM, resultW);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        $display("PC CONTROL: pc=%h, pcnext=%h, stallF=%b, pcsrc=%b, jumpE=%b, is_jalrE=%b", 
+                pc, pcnext, stallF, pcsrc, jumpE, is_jalrE);
+    end
+    //-----------------------------------------------------------------------------------//
+    // No pipeline, monitore os stalls
+    always @(posedge clk) begin
+        $display("STALL DEBUG: stallF=%b, stallD=%b, flushE=%b, pc=%h", 
+                stallF, stallD, flushE, pc);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        if (regwriteW && rdW == 7)
+            $display("WB: escrevendo x7 = %h", resultW);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+        $display("FETCH: pcF=%h, instrF=%h, pcplus4F=%h", pcF, instrF, pcplus4F);
+    end
+    //-----------------------------------------------------------------------------------//
+    always @(posedge clk) begin
+    if (rdE == 5'd4) begin // Quando a instrução destino for x4
+        $display("DEBUG EX: rs1E=%d (val=%h), immextE=%h, aluresultE=%h, fowardAE=%b", 
+                 rs1E, srca, immextE, aluresultE, fowardAE);
+    end
+    end
+    //-----------------------------------------------------------------------------------//
 
 
 endmodule 

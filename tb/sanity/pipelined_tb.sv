@@ -34,9 +34,9 @@ module pipelined_tb();
         $monitor("Tempo: %0t | PC_Fetch: %h | RD_WB: %d | Dado_WB: %d | RegWrite: %b", 
                  $time, dut.pcF, dut.rdW, dut.resultW, dut.regwriteW);
 
-        // Executa por tempo suficiente para o programa de teste terminar
-        // O programa tem ~13 instruções + latência de pipeline
-        #250;
+        // 
+        // DEBUG PARA VALORES DOS REGISTRADORES AO FIM DA EXECUÇÂO
+        #500;
         $display("--------------------------------------------------");
         $display("Resultados finais:");
         $display("x1 = %0d", dut.u_reg_file_n.rf[1]);
@@ -72,19 +72,9 @@ module pipelined_tb();
         $display("x31 = %0d", dut.u_reg_file_n.rf[31]);
         $display("Mem[0] = %0d", dut.u_data_memory.datamem[0]);
         $display("--------------------------------------------------");
+        $display("PC final: %h", dut.pc);
         $display("Simulação finalizada.");
-        $display("Verifique se x6 (rdW=6) contém o valor 25.");
         $finish;
     end
-
-    // Tarefa para debugar o Banco de Registradores (opcional)
-    // Se o seu simulador permitir, você pode ver o conteúdo interno:
-    /*
-    initial begin
-        #230;
-        $display("Conteúdo Final do Reg[6]: %d", dut.u_reg_file_n.rf[6]);
-        $display("Conteúdo da Memória[0]: %h", dut.u_data_memory.mem[0]);
-    end
-    */
 
 endmodule
