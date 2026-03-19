@@ -36,7 +36,7 @@ module pipelined_tb();
 
         // Executa por tempo suficiente para o programa de teste terminar
         // O programa tem ~13 instruções + latência de pipeline
-        #250;
+        #1000;
         $display("--------------------------------------------------");
         $display("Resultados finais:");
         $display("x1 = %0d", dut.u_reg_file_n.rf[1]);
@@ -72,8 +72,8 @@ module pipelined_tb();
         $display("x31 = %0d", dut.u_reg_file_n.rf[31]);
         $display("Mem[0] = %0d", dut.u_data_memory.datamem[0]);
         $display("--------------------------------------------------");
+        $display("PC final: %h", dut.pc);
         $display("Simulação finalizada.");
-        $display("Verifique se x6 (rdW=6) contém o valor 25.");
         $finish;
     end
 
