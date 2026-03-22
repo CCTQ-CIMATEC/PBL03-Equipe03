@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Default CMake variables
+TOP_NAME="adder_tb_top"
+TEST_NAME="adder_basic_test"
+VIVADO_PARMS="--R"
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --top) TOP_NAME="$2"; shift ;;
+        --test) TEST_NAME="$2"; shift ;;
+        --vivado) VIVADO_PARMS="$2"; shift ;;
+        -h|--help) 
+            echo "Usage: ./configure [options]"
+            echo "Options:"
+            echo "  --top <name>       Specify the top module name (default: adder_tb_top)"
+            echo "  --test <name>      Specify the test name (default: adder_basic_test)"
+            echo "  --vivado <params>  Pass Vivado parameters (default: --R)"
+            exit 0
+            ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+# Run CMake to configure the build directory
+cmake -S . -B build -DTOP_NAME="${TOP_NAME}" -DTEST_NAME="${TEST_NAME}" -DVIVADO_PARMS="${VIVADO_PARMS}"

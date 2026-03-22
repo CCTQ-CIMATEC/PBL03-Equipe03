@@ -1,0 +1,9 @@
+srclist/adder.srclist  
++incdir+tb/env/agents/adder_agent
+srclist/adder_interface.srclist
+tb/env/agents/adder_agent/adder_agent_pkg.sv 
+tb/env/ref_model/adder_ref_model_pkg.sv 
+tb/env/top/adder_env_pkg.sv
+tb/tests/sequence_lib/adder_seq_list_pkg.sv 
+tb/tests/adder_test_list_pkg.sv 
+tb/adder_tb_top.sv
