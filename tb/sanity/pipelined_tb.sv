@@ -36,7 +36,7 @@ module pipelined_tb();
 
         // 
         // DEBUG PARA VALORES DOS REGISTRADORES AO FIM DA EXECUÇÂO
-        #500;
+        #2500;
         $display("--------------------------------------------------");
         $display("Resultados finais:");
         $display("x1 = %0d", dut.u_reg_file_n.rf[1]);
