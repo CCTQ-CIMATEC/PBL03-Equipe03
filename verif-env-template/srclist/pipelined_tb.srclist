@@ -1,0 +1,16 @@
+rtl/defines/riscv_pkg.sv
+rtl/components/program_counter.sv
+rtl/components/reg_file.sv
+rtl/components/extend.sv
+rtl/components/alu.sv
+rtl/components/main_decoder.sv
+rtl/components/alu_decoder.sv
+rtl/components/full_decoder.sv
+rtl/components/branch_control.sv
+rtl/components/data_slicer.sv
+rtl/components/data_masker.sv
+rtl/components/data_memory.sv
+rtl/components/instruction_memory.sv
+rtl/components/hazard_unit.sv
+rtl/components/pipelined.sv
+tb/sanity/pipelined_tb.sv

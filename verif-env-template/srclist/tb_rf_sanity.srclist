@@ -1,0 +1,2 @@
+rtl/components/reg_file.sv
+tb/sanity/tb_rf_sanity.sv
