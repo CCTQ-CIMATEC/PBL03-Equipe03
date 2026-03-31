@@ -2,7 +2,7 @@
 
 module instruction_memory #(
     parameter SIZE = 1024,
-    parameter FILE = "test_prog.mem"
+    parameter FILE = "../tb/sanity/test_prog.mem"
 )(
     input  logic [31:0] a,
     output logic [31:0] rd

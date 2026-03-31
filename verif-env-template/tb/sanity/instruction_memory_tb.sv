@@ -8,7 +8,7 @@ module instruction_memory_tb;
     // Sobrescrevemos o parâmetro FILE para usar nosso arquivo de teste
     instruction_memory #(
         .SIZE(1024),
-        .FILE("test_prog.mem") 
+        .FILE("../tb/sanity/test_prog.mem") 
     ) uut (
         .a(a),
         .rd(rd)

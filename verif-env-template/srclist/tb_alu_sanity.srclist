@@ -1,0 +1,3 @@
+rtl/defines/riscv_pkg.sv
+rtl/components/alu.sv
+tb/sanity/tb_alu_sanity.sv

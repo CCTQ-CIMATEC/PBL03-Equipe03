@@ -1,0 +1,2 @@
+rtl/components/instruction_memory.sv
+tb/sanity/instruction_memory_tb.sv
