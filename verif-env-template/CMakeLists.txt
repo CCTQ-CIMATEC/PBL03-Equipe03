@@ -283,20 +283,22 @@ set(DOLLAR "$")
 
 # Primary 'sim' target: executes the simulation engine headlessly in CLI (xsim)
 add_custom_target(sim
-    COMMAND bash -c "xsim top_sim ${VIVADO_PARMS_LIST} --testplusarg UVM_TESTNAME=${DOLLAR}${DOLLAR}{TEST_NAME:-${TEST_NAME}}"
-    DEPENDS elaborate
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Running standard simulation in CLI..."
-    USES_TERMINAL
+  COMMAND xsim top_sim ${VIVADO_PARMS_LIST} --testplusarg UVM_TESTNAME=${TEST_NAME}
+  DEPENDS elaborate
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  COMMENT "Running standard simulation in CLI..."
+  USES_TERMINAL
+  VERBATIM
 )
 
 # 'gui' target: executes the simulation engine visually in Vivado's GUI
 add_custom_target(gui
-    COMMAND bash -c "xsim top_sim --gui --view ../scripts/${TOP_NAME}_sim.wcfg --testplusarg UVM_TESTNAME=${DOLLAR}${DOLLAR}{TEST_NAME:-${TEST_NAME}}"
-    DEPENDS elaborate
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Opening simulation in Vivado GUI..."
-    USES_TERMINAL
+  COMMAND xsim top_sim --gui --view ../scripts/${TOP_NAME}_sim.wcfg ${VIVADO_PARMS_LIST} --testplusarg UVM_TESTNAME=${TEST_NAME}
+  DEPENDS elaborate
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  COMMENT "Opening simulation in Vivado GUI..."
+  USES_TERMINAL
+  VERBATIM
 )
 
 # Define simulation artifacts natively to automatically get wiped out upon running `make clean`.
@@ -315,11 +317,12 @@ foreach(TEST_FILE IN LISTS TEST_FILES)
     
     # Explicit CLI explicit simulator target specific to test structure
     add_custom_target(sim_${INDIVIDUAL_TEST_NAME}
-        COMMAND bash -c "xsim top_sim ${VIVADO_PARMS_LIST} --testplusarg UVM_TESTNAME=${INDIVIDUAL_TEST_NAME}"
+        COMMAND xsim top_sim ${VIVADO_PARMS_LIST} --testplusarg UVM_TESTNAME=${INDIVIDUAL_TEST_NAME}
         DEPENDS elaborate
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Running explicit simulation in CLI view: ${INDIVIDUAL_TEST_NAME}..."
         USES_TERMINAL
+        VERBATIM
     )
     
     # Create a wrapper target for exactly this test name (Standard Mode)
@@ -328,11 +331,12 @@ foreach(TEST_FILE IN LISTS TEST_FILES)
     
     # Explicit GUI explicit simulator target specific to test structure
     add_custom_target(gui_${INDIVIDUAL_TEST_NAME}
-        COMMAND bash -c "xsim top_sim --gui --view ../scripts/${TOP_NAME}_sim.wcfg --testplusarg UVM_TESTNAME=${INDIVIDUAL_TEST_NAME}"
+        COMMAND xsim top_sim --gui --view ../scripts/${TOP_NAME}_sim.wcfg ${VIVADO_PARMS_LIST} --testplusarg UVM_TESTNAME=${INDIVIDUAL_TEST_NAME}
         DEPENDS elaborate
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Opening explicitly designed GUI simulation: ${INDIVIDUAL_TEST_NAME}..."
         USES_TERMINAL
+        VERBATIM
     )
 endforeach()
 
