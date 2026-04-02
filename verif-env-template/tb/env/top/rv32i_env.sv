@@ -10,6 +10,7 @@ class rv32i_env extends uvm_env;
     rv32i_monitor    monitor;
     rv32i_ref_model  ref_model;
     rv32i_scoreboard scoreboard;
+    rv32i_checker_base checker_h;
 
     // ------------------------------------------------------------
     // Constructor
@@ -27,6 +28,7 @@ class rv32i_env extends uvm_env;
         monitor    = rv32i_monitor   ::type_id::create("monitor", this);
         ref_model  = rv32i_ref_model ::type_id::create("ref_model", this);
         scoreboard = rv32i_scoreboard::type_id::create("scoreboard", this);
+        checker_h  = rv32i_checker_base::type_id::create("checker", this);
     endfunction
 
     // ------------------------------------------------------------
@@ -40,6 +42,7 @@ class rv32i_env extends uvm_env;
 
         // Reference model -> esperado
         ref_model.exp_ap.connect(scoreboard.exp_fifo.analysis_export);
+        monitor.commit_ap.connect(checker_h.analysis_export);
     endfunction
 
     // ------------------------------------------------------------

@@ -9,6 +9,10 @@ package rv32i_tb_cfg_pkg;
     localparam int unsigned RV32I_DEFAULT_MAX_INSTR = 12;
     localparam bit [31:0] RV32I_DEFAULT_START_PC = 32'h0000_0000;
 
+    // phase 1 parameters
+    localparam string RV32I_PHASE1_PROG_FILE = "..tb/programs/phase1/mem/phase1_full.mem";
+
+
 endpackage
 
 `endif

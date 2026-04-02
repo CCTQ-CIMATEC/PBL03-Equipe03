@@ -25,7 +25,7 @@ class rv32i_monitor extends uvm_monitor;
     // ------------------------------------------------------------
     function new(string name = "rv32i_monitor", uvm_component parent = null);
         super.new(name, parent);
-        commit_ap = new("commit_ap", this);
+        commit_ap   = new("commit_ap", this);
         cycle_count = 0;
     endfunction
 
@@ -48,6 +48,10 @@ class rv32i_monitor extends uvm_monitor;
     // - espera borda de clock pelo clocking block do monitor
     // - ignora ciclos em reset
     // - cria uma transação sempre que houver regwrite no writeback
+    //
+    // Observação:
+    // o monitor NÃO faz checker funcional de fase.
+    // Ele apenas observa e publica commits.
     // ------------------------------------------------------------
     task run_phase(uvm_phase phase);
         rv32i_commit_tr tr;
@@ -63,37 +67,37 @@ class rv32i_monitor extends uvm_monitor;
 
             cycle_count++;
 
-            // Para a Fase 1, tratamos writeback como "commit"
+            // Para este ambiente, tratamos writeback como "commit"
             if (vif.mon_cb.regwrite_w_mon) begin
+                // Filtro opcional para PC inválido/sentinela
+                if (vif.mon_cb.pc_commit_mon == 32'hffff_fffc)
+                    continue;
+
                 tr = rv32i_commit_tr::type_id::create(
                         $sformatf("commit_tr_%0d", cycle_count), this);
 
                 // -----------------------------
                 // Campos principais
                 // -----------------------------
-                tr.cycle      = cycle_count;
-                tr.pc         = vif.mon_cb.pc_commit_mon;
-                tr.instr      = vif.mon_cb.instr_commit_mon;
-                tr.regwrite   = vif.mon_cb.regwrite_w_mon;
-                tr.rd_addr    = vif.mon_cb.rd_w_mon;
-                tr.rd_data    = vif.mon_cb.result_w_mon;
-                tr.x0_value   = vif.mon_cb.x0_value_mon;
+                tr.cycle     = cycle_count;
+                tr.pc        = vif.mon_cb.pc_commit_mon;
+                tr.instr     = vif.mon_cb.instr_commit_mon;
+                tr.regwrite  = vif.mon_cb.regwrite_w_mon;
+                tr.rd_addr   = vif.mon_cb.rd_w_mon;
+                tr.rd_data   = vif.mon_cb.result_w_mon;
+                tr.x0_value  = vif.mon_cb.x0_value_mon;
 
                 // -----------------------------
                 // Campos auxiliares de debug
                 // -----------------------------
-                tr.stallF     = vif.mon_cb.stallF_mon;
-                tr.stallD     = vif.mon_cb.stallD_mon;
-                tr.flushE     = vif.mon_cb.flushE_mon;
+                tr.stallF      = vif.mon_cb.stallF_mon;
+                tr.stallD      = vif.mon_cb.stallD_mon;
+                tr.flushE      = vif.mon_cb.flushE_mon;
 
-                tr.pc_fetch   = vif.mon_cb.pc_fetch_mon;
-                tr.instr_fetch= vif.mon_cb.instr_fetch_mon;
-                tr.instr_dec  = vif.mon_cb.instr_decode_mon;
-                tr.instr_ex   = vif.mon_cb.instr_execute_mon;
-
-                // no rv32i_monitor.sv, antes de dar commit_ap.write(tr)
-                if (vif.mon_cb.pc_commit_mon == 32'hffff_fffc)
-                    continue;
+                tr.pc_fetch    = vif.mon_cb.pc_fetch_mon;
+                tr.instr_fetch = vif.mon_cb.instr_fetch_mon;
+                tr.instr_dec   = vif.mon_cb.instr_decode_mon;
+                tr.instr_ex    = vif.mon_cb.instr_execute_mon;
 
                 // -----------------------------
                 // Publica transação

@@ -5,6 +5,7 @@
 +incdir+tb/env/agents/rv32i_agent
 +incdir+tb/env/ref_model
 +incdir+tb/env/top
++incdir+tb/env/checkers
 +incdir+tb/tests
 
 srclist/rv32i_interface.srclist
