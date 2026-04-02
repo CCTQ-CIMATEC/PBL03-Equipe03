@@ -20,7 +20,9 @@ module reg_file(
     always_ff @(negedge clk) begin
         if(we3)
             rf[a3] <= wd3;
-            $display("DEBUG RF: Escrita em x%d = %h no tempo %t", a3, wd3, $time);
+        `ifdef DEBUG
+        $display("DEBUG RF: Escrita em x%d = %h no tempo %t", a3, wd3, $time);
+        `endif
     end
 
     assign rd1 = (a1 != 5'b0) ? rf[a1] : 32'b0;

@@ -15,7 +15,9 @@ module program_counter (
     end
 
     always @(posedge clk) begin
+        `ifdef DEBUG
         $display("PC DEBUG: clk=%b, rst=%b, ena=%b, pcnext=%h, pc=%h", 
                 clk, rst_n, ena, pcnext, pc);
+        `endif 
     end
 endmodule

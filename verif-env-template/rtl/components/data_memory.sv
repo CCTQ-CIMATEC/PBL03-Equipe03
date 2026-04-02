@@ -36,8 +36,10 @@ module data_memory #(
     // Dentro do data_memory (opcional, para confirmar a escrita)
     always @(posedge clk) begin
         if (|we) begin
+            `ifdef DEBUG
             $display("MEM WRITE: addr=%h, data=%h, we=%b", 
                     a, wd, we);
+            `endif
         end
     end
 endmodule 
