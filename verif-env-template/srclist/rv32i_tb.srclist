@@ -1,5 +1,6 @@
 +incdir+tb
 +incdir+tb/cfg
++incdir+tb/common
 +incdir+tb/env
 +incdir+tb/env/agents
 +incdir+tb/env/agents/rv32i_agent

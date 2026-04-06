@@ -47,15 +47,20 @@ module rv32i_tb;
     string prog_file;
 
     initial begin
-        if (!$value$plusargs("PROG=%s", prog_file))
-            prog_file = RV32I_DEFAULT_PROG_FILE;
+        if (!$value$plusargs("PROG=%s", prog_file)) begin
+                $fatal(1, "[RV32I_TB] Plusarg PROG nao foi informado");
+            end
 
-        #1ps;
+        rv32i_check_mem_file_or_fatal(prog_file);
+
         $readmemh(prog_file, dut.u_instruction_memory.instrmem);
 
-        $display("TB: programa carregado de '%s'", prog_file);
-        $display("TB: instrmem[0] = %h", dut.u_instruction_memory.instrmem[0]);
-        $display("TB: instrmem[1] = %h", dut.u_instruction_memory.instrmem[1]);
+        `uvm_info("RV32I_TB",
+            $sformatf("Programa carregado de '%s' | instrmem[0]=%h | instrmem[1]=%h",
+                    prog_file,
+                    dut.u_instruction_memory.instrmem[0],
+                    dut.u_instruction_memory.instrmem[1]),
+            UVM_LOW)
     end
     // ============================================================
     // Taps hierárquicos para o monitor

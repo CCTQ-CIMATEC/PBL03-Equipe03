@@ -51,8 +51,9 @@ class rv32i_ref_model extends uvm_component;
 
         // Arquivo do programa
         if (!uvm_config_db#(string)::get(this, "", "prog_file", prog_file)) begin
-            if (!$value$plusargs("PROG=%s", prog_file))
-                prog_file = "../tb/sanity/test_prog.mem";
+            `uvm_fatal("NO_PROGFILE",
+                $sformatf("%s: arquivo de programa não encontrado no ambiente",
+                          get_full_name()))
         end
 
         // Quantidade máxima de instruções que o modelo vai percorrer
@@ -90,6 +91,8 @@ class rv32i_ref_model extends uvm_component;
             prog_mem[i] = 32'h0000_0000;
         end
 
+        rv32i_check_mem_file_or_fatal(prog_file);
+        
         $readmemh(prog_file, prog_mem);
 
         `uvm_info("RV32I_REF",

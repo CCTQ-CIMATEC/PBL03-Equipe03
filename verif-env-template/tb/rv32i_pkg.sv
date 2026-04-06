@@ -1,6 +1,9 @@
 package rv32i_pkg;
     import uvm_pkg::*;
     `include "uvm_macros.svh"
+    
+    // common
+    `include "common/rv32i_mem_utils.svh"
 
     // transações
     `include "env/agents/rv32i_agent/rv32i_commit_tr.sv"
