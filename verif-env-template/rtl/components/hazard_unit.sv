@@ -42,7 +42,9 @@ module hazard_unit (
             else
                 fowardBE = 2'b00;
         end
+        `ifdef DEBUG
         $display("HAZARD: rs2E=%d, rdM=%d, regwriteM=%b, fowardBE=%b", rs2E, rdM, regwriteM, fowardBE);
+        `endif    
     end
 
     // +--------------------------------------+

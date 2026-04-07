@@ -11,14 +11,16 @@ module instruction_memory #(
 
     initial begin
         // 1. Tenta carregar o arquivo
-        $readmemh(FILE, instrmem);
+        //$readmemh(FILE, instrmem);
 
+        `ifdef DEBUG     
         // 2. Debug: Mostra no console o que foi carregado nas primeiras posições
         $display("--------------------------------------------------");
         $display("DEBUG MEMORIA: Carregando arquivo '%s'", FILE);
         $display("DEBUG MEMORIA: instrmem[0] = %h", instrmem[0]);
         $display("DEBUG MEMORIA: instrmem[1] = %h", instrmem[1]);
         $display("--------------------------------------------------");
+        `endif
     end
     
     assign rd = instrmem[a[31:2]];

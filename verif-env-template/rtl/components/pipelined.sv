@@ -375,7 +375,7 @@ module pipelined (
     // SINAIS REGFILE
     
 
-    reg_file u_reg_file_n (
+    reg_file_n u_reg_file_n (
         .clk(clk),
         .we3(regwriteW),     // escrita somente no writeback e na borda negativa do clock, negedge
         .a1(instrD[19:15]), 
@@ -450,7 +450,7 @@ module pipelined (
     //                 DISPLAYS DE DEBUG                //
     //----------------------------------------------------
 
-
+    `ifdef DEBUG    
     always @(posedge clk) begin
         $display("DECODE: instrD=%h, pcD=%h", instrD, pcD);
     end
@@ -518,6 +518,7 @@ module pipelined (
                  rs1E, srca, immextE, aluresultE, fowardAE);
     end
     end
+    `endif
     //-----------------------------------------------------------------------------------//
 
 
