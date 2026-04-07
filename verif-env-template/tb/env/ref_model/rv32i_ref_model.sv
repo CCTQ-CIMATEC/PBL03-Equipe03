@@ -118,6 +118,27 @@ class rv32i_ref_model extends uvm_component;
         sext12 = {{20{imm12[11]}}, imm12};
     endfunction
 
+    function automatic bit [31:0] sll32(
+    input bit [31:0] value,
+    input bit [4:0]  shamt
+    );
+        sll32 = value << shamt;
+    endfunction
+
+    function automatic bit [31:0] srl32(
+        input bit [31:0] value,
+        input bit [4:0]  shamt
+    );
+        srl32 = value >> shamt;
+    endfunction
+
+    function automatic bit [31:0] sra32(
+        input bit [31:0] value,
+        input bit [4:0]  shamt
+    );
+        sra32 = $signed(value) >>> shamt;
+    endfunction
+
     // ------------------------------------------------------------
     // Gera a sequência de commits esperados
     // Suporta nesta fase:
@@ -138,7 +159,8 @@ class rv32i_ref_model extends uvm_component;
         bit [4:0]  rs2;
         bit [4:0]  rd;
         bit [31:0] imm_i;
-
+        
+        bit [4:0]  shamt_i;
         bit [31:0] result;
 
         rv32i_commit_tr tr;
@@ -149,14 +171,15 @@ class rv32i_ref_model extends uvm_component;
             UVM_LOW)
 
         for (i = 0; i < max_instr; i++) begin
-            instr  = prog_mem[pc_model[31:2]];
-            opcode = instr[6:0];
-            funct3 = instr[14:12];
-            funct7 = instr[31:25];
-            rs1    = instr[19:15];
-            rs2    = instr[24:20];
-            rd     = instr[11:7];
-            imm_i  = sext12(instr[31:20]);
+            instr   = prog_mem[pc_model[31:2]];
+            opcode  = instr[6:0];
+            funct3  = instr[14:12];
+            funct7  = instr[31:25];
+            rs1     = instr[19:15];
+            rs2     = instr[24:20];
+            rd      = instr[11:7];
+            imm_i   = sext12(instr[31:20]);
+            shamt_i = instr[24:20];
 
             // Se pegou X/Z, interrompe para evitar lixo
             if ((^instr) === 1'bx) begin
@@ -166,10 +189,14 @@ class rv32i_ref_model extends uvm_component;
                 break;
             end
 
-            // ----------------------------------------------------
+            // valor default
+            result = 32'h0000_0000;
+
+            // ====================================================
+            // I-TYPE ARITH / LOGIC
+            // ====================================================
+
             // ADDI
-            // opcode = 0010011, funct3 = 000
-            // ----------------------------------------------------
             if ((opcode == 7'b0010011) && (funct3 == 3'b000)) begin
                 result = regs_model[rs1] + imm_i;
 
@@ -189,24 +216,217 @@ class rv32i_ref_model extends uvm_component;
                 regs_model[0] = 32'h0000_0000;
                 tr.x0_value   = regs_model[0];
 
-                tr.stallF     = 1'b0;
-                tr.stallD     = 1'b0;
-                tr.flushE     = 1'b0;
-                tr.pc_fetch   = 32'h0;
-                tr.instr_fetch= 32'h0;
-                tr.instr_dec  = 32'h0;
-                tr.instr_ex   = 32'h0;
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
 
                 exp_ap.write(tr);
             end
 
-            // ----------------------------------------------------
+            // XORI
+            else if ((opcode == 7'b0010011) && (funct3 == 3'b100)) begin
+                result = regs_model[rs1] ^ imm_i;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_xori_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // ORI
+            else if ((opcode == 7'b0010011) && (funct3 == 3'b110)) begin
+                result = regs_model[rs1] | imm_i;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_ori_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // ANDI
+            else if ((opcode == 7'b0010011) && (funct3 == 3'b111)) begin
+                result = regs_model[rs1] & imm_i;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_andi_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // SLLI
+            else if ((opcode == 7'b0010011) &&
+                    (funct3 == 3'b001)     &&
+                    (funct7 == 7'b0000000)) begin
+                result = sll32(regs_model[rs1], shamt_i);
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_slli_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // SRLI
+            else if ((opcode == 7'b0010011) &&
+                    (funct3 == 3'b101)     &&
+                    (funct7 == 7'b0000000)) begin
+                result = srl32(regs_model[rs1], shamt_i);
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_srli_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // SRAI
+            else if ((opcode == 7'b0010011) &&
+                    (funct3 == 3'b101)     &&
+                    (funct7 == 7'b0100000)) begin
+                result = sra32(regs_model[rs1], shamt_i);
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_srai_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // ====================================================
+            // R-TYPE ARITH / LOGIC
+            // ====================================================
+
             // ADD
-            // opcode = 0110011, funct3 = 000, funct7 = 0000000
-            // ----------------------------------------------------
             else if ((opcode == 7'b0110011) &&
-                     (funct3 == 3'b000) &&
-                     (funct7 == 7'b0000000)) begin
+                    (funct3 == 3'b000)     &&
+                    (funct7 == 7'b0000000)) begin
 
                 result = regs_model[rs1] + regs_model[rs2];
 
@@ -226,24 +446,21 @@ class rv32i_ref_model extends uvm_component;
                 regs_model[0] = 32'h0000_0000;
                 tr.x0_value   = regs_model[0];
 
-                tr.stallF     = 1'b0;
-                tr.stallD     = 1'b0;
-                tr.flushE     = 1'b0;
-                tr.pc_fetch   = 32'h0;
-                tr.instr_fetch= 32'h0;
-                tr.instr_dec  = 32'h0;
-                tr.instr_ex   = 32'h0;
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
 
                 exp_ap.write(tr);
             end
 
-            // ----------------------------------------------------
             // SUB
-            // opcode = 0110011, funct3 = 000, funct7 = 0100000
-            // ----------------------------------------------------
             else if ((opcode == 7'b0110011) &&
-                     (funct3 == 3'b000) &&
-                     (funct7 == 7'b0100000)) begin
+                    (funct3 == 3'b000)     &&
+                    (funct7 == 7'b0100000)) begin
 
                 result = regs_model[rs1] - regs_model[rs2];
 
@@ -263,24 +480,228 @@ class rv32i_ref_model extends uvm_component;
                 regs_model[0] = 32'h0000_0000;
                 tr.x0_value   = regs_model[0];
 
-                tr.stallF     = 1'b0;
-                tr.stallD     = 1'b0;
-                tr.flushE     = 1'b0;
-                tr.pc_fetch   = 32'h0;
-                tr.instr_fetch= 32'h0;
-                tr.instr_dec  = 32'h0;
-                tr.instr_ex   = 32'h0;
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
 
                 exp_ap.write(tr);
             end
 
-            // ----------------------------------------------------
+            // XOR
+            else if ((opcode == 7'b0110011) &&
+                    (funct3 == 3'b100)     &&
+                    (funct7 == 7'b0000000)) begin
+
+                result = regs_model[rs1] ^ regs_model[rs2];
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_xor_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // OR
+            else if ((opcode == 7'b0110011) &&
+                    (funct3 == 3'b110)     &&
+                    (funct7 == 7'b0000000)) begin
+
+                result = regs_model[rs1] | regs_model[rs2];
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_or_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // AND
+            else if ((opcode == 7'b0110011) &&
+                    (funct3 == 3'b111)     &&
+                    (funct7 == 7'b0000000)) begin
+
+                result = regs_model[rs1] & regs_model[rs2];
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_and_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // SLL
+            else if ((opcode == 7'b0110011) &&
+                    (funct3 == 3'b001)     &&
+                    (funct7 == 7'b0000000)) begin
+
+                result = sll32(regs_model[rs1], regs_model[rs2][4:0]);
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_sll_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // SRL
+            else if ((opcode == 7'b0110011) &&
+                    (funct3 == 3'b101)     &&
+                    (funct7 == 7'b0000000)) begin
+
+                result = srl32(regs_model[rs1], regs_model[rs2][4:0]);
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_srl_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // SRA
+            else if ((opcode == 7'b0110011) &&
+                    (funct3 == 3'b101)     &&
+                    (funct7 == 7'b0100000)) begin
+
+                result = sra32(regs_model[rs1], regs_model[rs2][4:0]);
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_sra_%0d", i), this);
+
+                tr.cycle      = i;
+                tr.pc         = pc_model;
+                tr.instr      = instr;
+                tr.regwrite   = 1'b1;
+                tr.rd_addr    = rd;
+                tr.rd_data    = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                tr.stallF      = 1'b0;
+                tr.stallD      = 1'b0;
+                tr.flushE      = 1'b0;
+                tr.pc_fetch    = 32'h0;
+                tr.instr_fetch = 32'h0;
+                tr.instr_dec   = 32'h0;
+                tr.instr_ex    = 32'h0;
+
+                exp_ap.write(tr);
+            end
+
+            // ====================================================
             // Instrução não suportada nesta fase
-            // ----------------------------------------------------
+            // ====================================================
             else begin
                 `uvm_warning("RV32I_REF",
-                    $sformatf("Instrucao nao suportada na Fase 1 em pc=%08h: %08h",
-                              pc_model, instr))
+                    $sformatf("Instrucao nao suportada na Fase 2A em pc=%08h: %08h",
+                            pc_model, instr))
             end
 
             // x0 sempre zero
