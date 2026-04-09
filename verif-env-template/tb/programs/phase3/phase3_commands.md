@@ -67,6 +67,6 @@ Os valores de `MAX_INSTR` usados foram:
 
 - `phase3_load_store_basic.mem` → `9`
 - `phase3_sign_zero_ext.mem` → `9`
-- `phase3_full.mem` → `19`
+- `phase3_full.mem` → `20`
 
 Eles correspondem à quantidade de instruções de cada programa.
