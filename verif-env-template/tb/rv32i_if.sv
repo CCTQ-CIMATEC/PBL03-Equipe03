@@ -1,3 +1,6 @@
+`ifndef RV32I_IF_SV
+`define RV32I_IF_SV
+
 interface rv32i_if (
     input logic clk,
     input logic rst_n
@@ -13,6 +16,12 @@ interface rv32i_if (
     logic [31:0] instr_decode_mon;
 
     logic [31:0] instr_execute_mon;
+
+    // ============================================================
+    // Monitoramento do estágio M
+    // ============================================================
+    logic [31:0] pc_memory_mon;
+    logic [31:0] instr_memory_mon;
 
     logic [31:0] instr_commit_mon;
 
@@ -37,7 +46,7 @@ interface rv32i_if (
     logic        flushE_mon;
 
     // ============================================================
-    // Monitoramento de memória (útil para fases futuras)
+    // Monitoramento de memória
     // ============================================================
     logic [31:0] alu_result_m_mon;
     logic [31:0] write_data_m_mon;
@@ -58,6 +67,9 @@ interface rv32i_if (
         input instr_decode_mon;
 
         input instr_execute_mon;
+
+        input pc_memory_mon;
+        input instr_memory_mon;
 
         input instr_commit_mon;
 
@@ -80,3 +92,5 @@ interface rv32i_if (
     modport mon_mp (clocking mon_cb, input clk, input rst_n);
 
 endinterface
+
+`endif

@@ -17,6 +17,9 @@ module pipelined_tb();
     // Bloco de Estímulos
     initial begin
         // Inicialização
+        string prog_file = "../tb/programs/phase3/mem/phase3_sign_zero_ext.mem";
+        $readmemh(prog_file, dut.u_instruction_memory.instrmem);
+
         clk = 0;
             rst = 0; // Ativa o reset (alto conforme seu código)
 
