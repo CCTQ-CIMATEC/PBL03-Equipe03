@@ -50,6 +50,7 @@ project(AdderTemplate NONE)
 set(TOP_NAME "adder_tb_top" CACHE STRING "Specify the exact top module name to be simulated")
 set(TEST_NAME "adder_basic_test" CACHE STRING "Specify the default UVM or SystemVerilog test name to run")
 set(VIVADO_PARMS "--R" CACHE STRING "Pass extra Vivado parameters for xsim (e.g. --R for run all)")
+set(XVLOG_DEFINES "" CACHE STRING "Pass extra macro definitions for xvlog (e.g. -d DEBUG)")
 
 # ==============================================================================
 # 2. Environment Validation
@@ -63,6 +64,7 @@ endif()
 # Convert VIVADO_PARMS into a list format.
 # This ensures that multiple spaces or separate arguments aren't incorrectly grouped as a single string during execution.
 separate_arguments(VIVADO_PARMS_LIST UNIX_COMMAND "${VIVADO_PARMS}")
+separate_arguments(XVLOG_DEFINES_LIST UNIX_COMMAND "${XVLOG_DEFINES}")
 
 # Log the active simulation configuration settings for user visibility.
 message(STATUS "--------------------------------------------------")
@@ -70,6 +72,7 @@ message(STATUS "  Simulation Configuration:")
 message(STATUS "  - Top Module     : ${TOP_NAME}")
 message(STATUS "  - Test Name      : ${TEST_NAME}")
 message(STATUS "  - Vivado Params  : ${VIVADO_PARMS}")
+message(STATUS "  - Xvlog Defines  : ${XVLOG_DEFINES}")
 message(STATUS "--------------------------------------------------")
 
 # ==============================================================================
@@ -117,6 +120,9 @@ function(compile_xvlog_library TARGET_LIB SV_FILES LOCAL_XVLOG_LIBS TARGET_DEPEN
     
     # Prepare xvlog parameters mapping the exact required libraries using the -L flag
     set(LOCAL_XVLOG_ARGS "-L" "uvm")
+    if(XVLOG_DEFINES_LIST)
+        list(APPEND LOCAL_XVLOG_ARGS ${XVLOG_DEFINES_LIST})
+    endif()
     if(LOCAL_XVLOG_INCDIRS)
         list(APPEND LOCAL_XVLOG_ARGS ${LOCAL_XVLOG_INCDIRS})
     endif()
