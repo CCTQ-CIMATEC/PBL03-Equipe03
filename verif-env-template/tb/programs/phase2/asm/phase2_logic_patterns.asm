@@ -1,16 +1,34 @@
+# Fase 2 - padrões lógicos
+# Cobre:
+# - criação de padrões de bits
+# - and / or / xor
+# - andi / ori / xori
+# - tentativa de escrita em x0 com XOR
 
-addi x1, x0, 15         # 0x0000000f
-addi x2, x0, -1         # 0xffffffff
-addi x3, x1, 0
-slli x3, x3, 4          # 0x000000f0
+# ------------------------------------------------------------
+# Inicialização de padrões
+# ------------------------------------------------------------
+addi x1, x0, 15         # x1 = 0x0000000F
+addi x2, x0, -1         # x2 = 0xFFFFFFFF
+addi x3, x1, 0          # x3 = 0x0000000F
+slli x3, x3, 4          # x3 = 0x000000F0
 
-xori x4, x2, 15         # 0xfffffff0
+xori x4, x2, 15         # x4 = 0xFFFFFFF0
 
-and  x5, x3, x4         # 0x000000f0
-or   x6, x1, x3         # 0x000000ff
-xor  x7, x6, x4         # 0xffffff0f
+# ------------------------------------------------------------
+# Operações lógicas R-type
+# ------------------------------------------------------------
+and  x5, x3, x4         # x5 = 0x000000F0
+or   x6, x1, x3         # x6 = 0x000000FF
+xor  x7, x6, x4         # x7 = 0xFFFFFF0F
 
-andi x8, x6, 15         # 0x0000000f
-ori  x9, x1, 16         # 0x0000001f
+# ------------------------------------------------------------
+# Operações lógicas I-type
+# ------------------------------------------------------------
+andi x8, x6, 15         # x8 = 0x0000000F
+ori  x9, x1, 16         # x9 = 0x0000001F
 
-xor  x0, x6, x1         # tentativa de escrita em x0 com R-type da fase 2
+# ------------------------------------------------------------
+# Tentativa de escrita em x0
+# ------------------------------------------------------------
+xor  x0, x6, x1         # x0 deve continuar 0

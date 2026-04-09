@@ -73,11 +73,14 @@ module rv32i_tb;
 
     assign vif.instr_execute_mon = dut.instrE;
 
+    assign vif.pc_memory_mon     = dut.pcplus4M - 32'd4;
+    assign vif.instr_memory_mon  =
+        dut.u_instruction_memory.instrmem[(dut.pcplus4M - 32'd4) >> 2];
+
     assign vif.regwrite_w_mon    = dut.regwriteW;
     assign vif.rd_w_mon          = dut.rdW;
     assign vif.result_w_mon      = dut.resultW;
 
-    // Para Fase 1, como o fluxo é sequencial, usar pcplus4W-4 é suficiente
     assign vif.pc_commit_mon     = dut.pcplus4W - 32'd4;
 
     assign vif.x0_value_mon      = dut.u_reg_file_n.rf[0];

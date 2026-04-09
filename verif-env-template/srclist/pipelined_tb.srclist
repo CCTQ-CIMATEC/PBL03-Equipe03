@@ -1,6 +1,6 @@
 rtl/defines/riscv_pkg.sv
 rtl/components/program_counter.sv
-rtl/components/reg_file.sv
+rtl/components/reg_file_n.sv
 rtl/components/extend.sv
 rtl/components/alu.sv
 rtl/components/main_decoder.sv
