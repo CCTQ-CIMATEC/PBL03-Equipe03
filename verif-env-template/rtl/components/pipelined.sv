@@ -13,6 +13,9 @@ module pipelined (
     logic        stallF;
     logic        flushE;
     logic [31:0] rd2_forwarded;
+    logic        isjumpbranch;
+    logic [1:0]  pcmux;
+    logic        pcsrc;
 
 
     //----------------------------------------------------
@@ -110,7 +113,7 @@ module pipelined (
     
     // FETCH/DECODE REGISTER
     always_ff @(posedge clk or negedge rst) begin 
-        if (!rst) begin
+        if (!rst || flushD) begin
             instrD    <= 32'h00000013; 
             pcD       <= 32'b0;
             pcplus4D  <= 32'b0;
@@ -234,6 +237,9 @@ module pipelined (
     // SINAIS HAZARD UNIT
     logic [1:0]      fowardAE;
     logic [1:0]      fowardBE;
+
+    assign isjumpbranch = pcsrc || jumpE; // talvez mudar isso 
+
     hazard_unit u_hazard_unit (
         .rs1D(rs1D),
         .rs2D(rs2D),
@@ -245,11 +251,13 @@ module pipelined (
         .regwriteM(regwriteM),
         .regwriteW(regwriteW),
         .resultsrcE(resultsrcE),
+        .isjumpbranch(isjumpbranch),  // para control hazard
         .fowardAE(fowardAE),
         .fowardBE(fowardBE),
         .stallF(stallF),
         .stallD(stallD),
-        .flushE(flushE)
+        .flushE(flushE),
+        .flushD(flushD)     // para control hazard
     );
 
     // CONTROL UNIT
@@ -272,10 +280,9 @@ module pipelined (
 
     // PROGRAM COUNTER
     // SINAIS PROGRAM COUNTER
-    logic        pcsrc;
     logic [31:0] pcnext;
     logic [31:0] pc;
-    logic [1:0]  pcmux;
+    
 
     assign pcmux = {is_jalrE, (pcsrc || jumpE)};  
 
