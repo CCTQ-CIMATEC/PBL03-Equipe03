@@ -11,10 +11,11 @@ module pipelined (
     logic [31:0] resultW;
     logic        stallD;
     logic        stallF;
+    logic        flushD;
     logic        flushE;
     logic [31:0] rd2_forwarded;
     logic        isjumpbranch;
-    logic [1:0]  pcmux;
+    logic        redirectE;
     logic        pcsrc;
 
 
@@ -134,27 +135,29 @@ module pipelined (
     assign  rs2D = instrD[24:20];
 
     always_ff @(posedge clk or negedge rst) begin
-        if(!rst || flushE) begin 
-            regwriteE  <= 1'b0;
-            memwriteE  <= 1'b0;
+        if(!rst || flushE) begin
+            // controle
             jumpE      <= 1'b0;
             branchE    <= 1'b0;
-            immextE    <= 32'b0;
-            // coisa do gemini
-            rd1E       <= 32'b0;
-            rd2E       <= 32'b0;
-            immextE    <= 32'b0;
+            is_jalrE   <= 1'b0;
+            regwriteE  <= 1'b0;
+            resultsrcE <= 3'b0;
+            memwriteE  <= 1'b0;
+            aluctrlE   <= ALU_ADD;
+            alusrcE    <= 1'b0;
+
+            // dados
             rs1E       <= 5'b0;
             rs2E       <= 5'b0;
+            rd1E       <= 32'b0;
+            rd2E       <= 32'b0;
+            funct3E    <= 3'b0;
             rdE        <= 5'b0;
+            immextE    <= 32'b0;
             pcE        <= 32'b0;
             pcplus4E   <= 32'b0;
-            resultsrcE <= 3'b0;
-            aluctrlE   <= ALU_ADD; 
-            alusrcE    <= 1'b0;
         end else begin
-            rs1E       <= rs1D;
-            rs2E       <= rs2D;
+            // controle
             jumpE      <= jumpD;
             branchE    <= branchD;
             is_jalrE   <= is_jalrD;
@@ -164,15 +167,17 @@ module pipelined (
             aluctrlE   <= aluctrlD;
             alusrcE    <= alusrcD;
 
+            // dados
+            rs1E       <= rs1D;
+            rs2E       <= rs2D;
             rd1E       <= rd1D;
             rd2E       <= rd2D;
             funct3E    <= funct3D;
             rdE        <= rdD;
-            pcE        <= pcD;
             immextE    <= immextD;
+            pcE        <= pcD;
             pcplus4E   <= pcplus4D;
         end
-         
     end
 
     
@@ -238,7 +243,9 @@ module pipelined (
     logic [1:0]      fowardAE;
     logic [1:0]      fowardBE;
 
-    assign isjumpbranch = pcsrc || jumpE; // talvez mudar isso 
+    //assign isjumpbranch = pcsrc || jumpE; // talvez mudar isso 
+    assign redirectE    = pcsrc || jumpE;
+    assign isjumpbranch = redirectE;
 
     hazard_unit u_hazard_unit (
         .rs1D(rs1D),
@@ -284,18 +291,17 @@ module pipelined (
     logic [31:0] pc;
     
 
-    assign pcmux = {is_jalrE, (pcsrc || jumpE)};  
-
     assign pcplus4F  = pc + 32'd4;
     assign pctargetE = pcE + immextE;
-    always_comb begin 
-        case(pcmux) 
-            2'b00:   pcnext = pcplus4F;
-            2'b01:   pcnext = pctargetE;
-            2'b10:   pcnext = aluresultE;
-            2'b11:   pcnext = aluresultE;    
-            default: pcnext = pcplus4F; 
-        endcase
+
+    always_comb begin
+        if (!redirectE) begin
+            pcnext = pcplus4F;
+        end else if (is_jalrE) begin
+            pcnext = {aluresultE[31:1], 1'b0}; // alinhamento do jalr
+        end else begin
+            pcnext = pctargetE;                // branch ou jal
+        end
     end
 
     program_counter u_program_counter (
@@ -500,8 +506,8 @@ module pipelined (
     end
     //-----------------------------------------------------------------------------------//
     always @(posedge clk) begin
-        $display("PC CONTROL: pc=%h, pcnext=%h, stallF=%b, pcsrc=%b, jumpE=%b, is_jalrE=%b", 
-                pc, pcnext, stallF, pcsrc, jumpE, is_jalrE);
+        $display("PC CONTROL: pc=%h, pcnext=%h, stallF=%b, pcsrc=%b, jumpE=%b, is_jalrE=%b, redirectE=%b, aluresultE=%h, pctargetE=%h",
+        pc, pcnext, stallF, pcsrc, jumpE, is_jalrE, redirectE, aluresultE, pctargetE);
     end
     //-----------------------------------------------------------------------------------//
     // No pipeline, monitore os stalls
