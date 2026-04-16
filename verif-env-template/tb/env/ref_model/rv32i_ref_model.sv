@@ -122,10 +122,26 @@ class rv32i_ref_model extends uvm_component;
     endfunction
 
     // ------------------------------------------------------------
-    // Sign-extend de imediato de 12 bits
+    // Sign-extend helpers de imediatos
     // ------------------------------------------------------------
     function automatic bit [31:0] sext12(input bit [11:0] imm12);
         sext12 = {{20{imm12[11]}}, imm12};
+    endfunction
+
+    function automatic bit [31:0] sext13(input bit [12:0] imm13);
+        sext13 = {{19{imm13[12]}}, imm13};
+    endfunction
+
+    function automatic bit [31:0] sext21(input bit [20:0] imm21);
+        sext21 = {{11{imm21[20]}}, imm21};
+    endfunction
+
+    function automatic bit [31:0] imm_b_from_instr(input bit [31:0] instr);
+        imm_b_from_instr = sext13({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0});
+    endfunction
+
+    function automatic bit [31:0] imm_j_from_instr(input bit [31:0] instr);
+        imm_j_from_instr = sext21({instr[31], instr[19:12], instr[20], instr[30:21], 1'b0});
     endfunction
 
     function automatic bit [31:0] sll32(
@@ -276,10 +292,13 @@ class rv32i_ref_model extends uvm_component;
 
         bit [31:0] imm_i;
         bit [31:0] imm_s;
+        bit [31:0] imm_b;
+        bit [31:0] imm_j;
         bit [4:0]  shamt_i;
 
         bit [31:0] result;
         bit [31:0] eff_addr;
+        bit [31:0] next_pc;
 
         rv32i_commit_tr tr;
 
@@ -298,6 +317,8 @@ class rv32i_ref_model extends uvm_component;
             rd      = instr[11:7];
             imm_i   = sext12(instr[31:20]);
             imm_s   = sext12({instr[31:25], instr[11:7]});
+            imm_b   = imm_b_from_instr(instr);
+            imm_j   = imm_j_from_instr(instr);
             shamt_i = instr[24:20];
 
             // Se pegou X/Z, interrompe para evitar lixo
@@ -310,6 +331,7 @@ class rv32i_ref_model extends uvm_component;
 
             result   = 32'h0000_0000;
             eff_addr = 32'h0000_0000;
+            next_pc  = pc_model + 32'd4;
 
             // ====================================================
             // I-TYPE ARITH / LOGIC
@@ -860,20 +882,158 @@ class rv32i_ref_model extends uvm_component;
                 exp_ap.write(tr);
             end
 
+
+            // ====================================================
+            // BRANCHES / JUMPS (Fase 4)
+            // ====================================================
+
+            // BEQ
+            else if ((opcode == 7'b1100011) && (funct3 == 3'b000)) begin
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_beq_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+                tr.x0_value = regs_model[0];
+
+                exp_ap.write(tr);
+
+                if (regs_model[rs1] == regs_model[rs2])
+                    next_pc = pc_model + imm_b;
+            end
+
+            // BNE
+            else if ((opcode == 7'b1100011) && (funct3 == 3'b001)) begin
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_bne_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+                tr.x0_value = regs_model[0];
+
+                exp_ap.write(tr);
+
+                if (regs_model[rs1] != regs_model[rs2])
+                    next_pc = pc_model + imm_b;
+            end
+
+            // BLT
+            else if ((opcode == 7'b1100011) && (funct3 == 3'b100)) begin
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_blt_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+                tr.x0_value = regs_model[0];
+
+                exp_ap.write(tr);
+
+                if ($signed(regs_model[rs1]) < $signed(regs_model[rs2]))
+                    next_pc = pc_model + imm_b;
+            end
+
+            // BGE
+            else if ((opcode == 7'b1100011) && (funct3 == 3'b101)) begin
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_bge_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+                tr.x0_value = regs_model[0];
+
+                exp_ap.write(tr);
+
+                if ($signed(regs_model[rs1]) >= $signed(regs_model[rs2]))
+                    next_pc = pc_model + imm_b;
+            end
+
+            // BLTU
+            else if ((opcode == 7'b1100011) && (funct3 == 3'b110)) begin
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_bltu_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+                tr.x0_value = regs_model[0];
+
+                exp_ap.write(tr);
+
+                if (regs_model[rs1] < regs_model[rs2])
+                    next_pc = pc_model + imm_b;
+            end
+
+            // BGEU
+            else if ((opcode == 7'b1100011) && (funct3 == 3'b111)) begin
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_bgeu_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+                tr.x0_value = regs_model[0];
+
+                exp_ap.write(tr);
+
+                if (regs_model[rs1] >= regs_model[rs2])
+                    next_pc = pc_model + imm_b;
+            end
+
+            // JAL
+            else if (opcode == 7'b1101111) begin
+                result = pc_model + 32'd4;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_jal_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+
+                next_pc = pc_model + imm_j;
+            end
+
+            // JALR
+            else if ((opcode == 7'b1100111) && (funct3 == 3'b000)) begin
+                eff_addr = (regs_model[rs1] + imm_i) & 32'hffff_fffe;
+                result   = pc_model + 32'd4;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_jalr_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+
+                next_pc = eff_addr;
+            end
+
             // ====================================================
             // Instrução não suportada nesta fase
             // ====================================================
             else begin
                 `uvm_warning("RV32I_REF",
-                    $sformatf("Instrucao nao suportada na Fase 3 em pc=%08h: %08h",
+                    $sformatf("Instrucao nao suportada ate a Fase 4 em pc=%08h: %08h",
                               pc_model, instr))
             end
 
             // x0 sempre zero
             regs_model[0] = 32'h0000_0000;
 
-            // Próxima instrução sequencial
-            pc_model = pc_model + 32'd4;
+            // Próxima instrução (sequencial ou alterada por controle)
+            pc_model = next_pc;
         end
 
         `uvm_info("RV32I_REF",

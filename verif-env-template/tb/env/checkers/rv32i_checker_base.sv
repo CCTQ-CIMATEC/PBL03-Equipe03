@@ -166,6 +166,49 @@ class rv32i_checker_base extends uvm_subscriber #(rv32i_commit_tr);
                (instr[14:12] == 3'b010);
     endfunction
 
+
+    /***************************
+     PHASE 4 FUNCTIONS CHECKERS
+    ****************************/
+    function bit is_beq_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b1100011) &&
+               (instr[14:12] == 3'b000);
+    endfunction
+
+    function bit is_bne_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b1100011) &&
+               (instr[14:12] == 3'b001);
+    endfunction
+
+    function bit is_blt_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b1100011) &&
+               (instr[14:12] == 3'b100);
+    endfunction
+
+    function bit is_bge_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b1100011) &&
+               (instr[14:12] == 3'b101);
+    endfunction
+
+    function bit is_bltu_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b1100011) &&
+               (instr[14:12] == 3'b110);
+    endfunction
+
+    function bit is_bgeu_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b1100011) &&
+               (instr[14:12] == 3'b111);
+    endfunction
+
+    function bit is_jal_instr(bit [31:0] instr);
+        return (instr[6:0] == 7'b1101111);
+    endfunction
+
+    function bit is_jalr_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b1100111) &&
+               (instr[14:12] == 3'b000);
+    endfunction
+
 endclass
 
 `endif

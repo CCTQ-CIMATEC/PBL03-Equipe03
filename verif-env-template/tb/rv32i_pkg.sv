@@ -18,6 +18,7 @@ package rv32i_pkg;
     `include "env/checkers/rv32i_phase1_checker.sv"
     `include "env/checkers/rv32i_phase2_checker.sv"
     `include "env/checkers/rv32i_phase3_checker.sv"
+    `include "env/checkers/rv32i_phase4_checker.sv"
 
 
     // env
@@ -28,5 +29,6 @@ package rv32i_pkg;
     `include "tests/rv32i_phase1_test.sv"
     `include "tests/rv32i_phase2_test.sv"
     `include "tests/rv32i_phase3_test.sv"
+    `include "tests/rv32i_phase4_test.sv"
     
 endpackage
