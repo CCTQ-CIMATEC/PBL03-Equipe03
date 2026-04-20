@@ -61,4 +61,12 @@ beq_taken:
     addi x22, x0, 222        # rotulo nao usado neste teste
 
 after_backward_jalr:
+    addi x23, x0, 1          # habilita o backward jal uma unica vez
+
+backward_jal_target:
+    beq  x23, x0, done       # 1a vez: not taken | 2a vez: taken
+    addi x23, x0, 0          # flag -> 0
+    jal  x24, backward_jal_target   # backward jal com offset negativo e link
+
+done:
     addi x22, x0, 22         # fim visivel do fluxo

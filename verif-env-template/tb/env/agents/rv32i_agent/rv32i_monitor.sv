@@ -201,10 +201,9 @@ class rv32i_monitor extends uvm_monitor;
     //
     // Observação:
     // podem existir até 2 transações no mesmo ciclo.
-    // Ordem adotada:
-    // 1) store em M
-    // 2) evento de branch puro em W
-    // 3) writeback em W
+    // Ordem adotada (ordem arquitetural/programa):
+    // 1) evento em W (branch puro ou writeback)
+    // 2) store em M
     // ------------------------------------------------------------
     task run_phase(uvm_phase phase);
         forever begin
@@ -218,20 +217,21 @@ class rv32i_monitor extends uvm_monitor;
 
             cycle_count++;
 
-            // 1) Evento de store em M
-            if (vif.mon_cb.write_enable_m_mon != 4'b0000) begin
-                publish_store_event();
-            end
-
-            // 2) Evento de branch puro em W
+            // 1) Evento mais antigo: estágio W
+            //    1a) branch puro em W
             if (!vif.mon_cb.regwrite_w_mon &&
                 is_branch_instr(vif.mon_cb.instr_commit_mon)) begin
                 publish_branch_event();
             end
 
-            // 3) Evento de writeback em W
+            //    1b) writeback em W
             if (vif.mon_cb.regwrite_w_mon) begin
                 publish_writeback_event();
+            end
+
+            // 2) Evento mais novo: estágio M
+            if (vif.mon_cb.write_enable_m_mon != 4'b0000) begin
+                publish_store_event();
             end
         end
     endtask

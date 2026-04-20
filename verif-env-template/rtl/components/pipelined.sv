@@ -139,13 +139,13 @@ module pipelined (
             memwriteE  <= 1'b0;
             jumpE      <= 1'b0;
             branchE    <= 1'b0;
-            immextE    <= 32'b0;
-            // coisa do gemini
+            is_jalrE   <= 1'b0;   // FALTAVA
             rd1E       <= 32'b0;
             rd2E       <= 32'b0;
             immextE    <= 32'b0;
             rs1E       <= 5'b0;
             rs2E       <= 5'b0;
+            funct3E    <= 3'b0;   // bom zerar também
             rdE        <= 5'b0;
             pcE        <= 32'b0;
             pcplus4E   <= 32'b0;

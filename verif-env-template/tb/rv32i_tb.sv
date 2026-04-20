@@ -100,12 +100,13 @@ module rv32i_tb;
     // UVM config
     // ============================================================
     initial begin
-        uvm_root::get().finish_on_completion = 0;  // UVM não finaliza a simulação.
         uvm_config_db#(virtual rv32i_if)::set(null, "*", "vif", vif);
         run_test();
+    end
+
+    final begin
         display_registers();
-        $display("Simulação finalizada.");
-        $finish;
+        display_mem();
     end
 
     function void display_registers();
@@ -142,8 +143,34 @@ module rv32i_tb;
         $display("x29 = %0d", dut.u_reg_file_n.rf[29]);
         $display("x30 = %0d", dut.u_reg_file_n.rf[30]);
         $display("x31 = %0d", dut.u_reg_file_n.rf[31]);
-        $display("Mem[0] = %0d", dut.u_data_memory.datamem[0]);
         $display("PC final: %h", dut.pc);
+        $display("--------------------------------------------------");
+    endfunction
+
+    localparam int DATA_MEM_WORDS = $size(dut.u_data_memory.datamem);
+
+    bit touched_mem [0:DATA_MEM_WORDS-1];
+
+    always @(posedge clk) begin
+        if (rst_n && dut.writeenableM != 4'b0000) begin
+            int idx;
+            idx = dut.aluresultM >> 2;
+
+            if (idx >= 0 && idx < DATA_MEM_WORDS) begin
+                touched_mem[idx] = 1'b1;
+            end
+        end
+    end
+
+     function void display_mem();
+        $display("--------------------------------------------------");
+        $display("Celulas de memoria escritas no teste:");
+        for (int i = 0; i < DATA_MEM_WORDS; i++) begin
+            if (touched_mem[i]) begin
+                $display("Mem[%0d] @0x%08h = 0x%08h",
+                        i, i*4, dut.u_data_memory.datamem[i]);
+            end
+        end
         $display("--------------------------------------------------");
     endfunction
 

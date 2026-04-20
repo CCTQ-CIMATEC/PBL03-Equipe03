@@ -30,12 +30,24 @@
 ./configure \
   --top rv32i_tb \
   --test rv32i_phase4_test \
-  --vivado "--R --testplusarg PROG=../tb/programs/phase4/mem/phase4_full.mem --testplusarg MAX_INSTR=25 --testplusarg START_PC=0x00000000"
+  --vivado "--R --testplusarg PROG=../tb/programs/phase4/mem/phase4_full.mem --testplusarg MAX_INSTR=30 --testplusarg START_PC=0x00000000"
 ```
 
 ---
 
-## 4. Próximos passos
+## 4. Teste `phase4_regression_all.mem`
+
+### Configuração
+```bash
+./configure \
+  --top rv32i_tb \
+  --test rv32i_phase4_test \
+  --vivado "--R --testplusarg PROG=../tb/programs/phase4/mem/phase4_regression_all.mem --testplusarg MAX_INSTR=76 --testplusarg START_PC=0x00000000"
+```
+
+---
+
+## 5. Próximos passos
 
 ### Compilação
 ```bash
@@ -69,5 +81,6 @@ Os valores de `MAX_INSTR` usados foram:
 - `phase4_branch_basic.mem` → `11`
 - `phase4_jump_basic.mem` → `8`
 - `phase4_full.mem` → `25`
+- `phase4_regression_all.mem` → `64`
 
 Eles correspondem à quantidade de eventos arquiteturais esperados em cada programa.
