@@ -12,8 +12,8 @@ class rv32i_monitor extends uvm_monitor;
     // ------------------------------------------------------------
     // Analysis port
     // O monitor publica transações arquiteturais observadas:
-    // - writeback no estágio W
     // - store no estágio M
+    // - writeback no estágio W
     // ------------------------------------------------------------
     uvm_analysis_port #(rv32i_commit_tr) commit_ap;
 
@@ -102,6 +102,52 @@ class rv32i_monitor extends uvm_monitor;
     endtask
 
     // ------------------------------------------------------------
+    // Helpers de decode local do monitor
+    // ------------------------------------------------------------
+    function bit is_branch_instr(bit [31:0] instr);
+        return (instr[6:0] == 7'b1100011);
+    endfunction
+
+    // ------------------------------------------------------------
+    // Publica evento de controle (branch) observado no estágio W
+    // ------------------------------------------------------------
+    task publish_branch_event();
+        rv32i_commit_tr tr;
+
+        if (vif.mon_cb.pc_commit_mon == 32'hffff_fffc)
+            return;
+
+        tr = rv32i_commit_tr::type_id::create(
+                $sformatf("branch_tr_%0d", cycle_count), this);
+
+        tr.cycle     = cycle_count;
+        tr.pc        = vif.mon_cb.pc_commit_mon;
+        tr.instr     = vif.mon_cb.instr_commit_mon;
+
+        tr.regwrite  = 1'b0;
+        tr.rd_addr   = 5'd0;
+        tr.rd_data   = 32'h0000_0000;
+
+        tr.memwrite  = 1'b0;
+        tr.mem_addr  = 32'h0000_0000;
+        tr.mem_wdata = 32'h0000_0000;
+        tr.mem_wmask = 4'b0000;
+
+        fill_debug_fields(tr);
+
+        commit_ap.write(tr);
+
+        `uvm_info("RV32I_MON",
+            $sformatf(
+                "BRANCH cycle=%0d pc=%08h instr=%08h x0=%08h stallF=%0b stallD=%0b flushE=%0b",
+                tr.cycle, tr.pc, tr.instr, tr.x0_value,
+                tr.stallF, tr.stallD, tr.flushE
+            ),
+            UVM_MEDIUM
+        )
+    endtask
+
+    // ------------------------------------------------------------
     // Publica evento de writeback observado no estágio W
     // ------------------------------------------------------------
     task publish_writeback_event();
@@ -149,14 +195,15 @@ class rv32i_monitor extends uvm_monitor;
     // Estratégia:
     // - espera borda de clock pelo clocking block do monitor
     // - ignora ciclos em reset
-    // - publica writeback quando houver regwrite no estágio W
     // - publica store quando houver write_enable no estágio M
+    // - publica writeback quando houver regwrite no estágio W
+    // - publica branch quando a instrucao em W for branch puro
     //
     // Observação:
     // podem existir até 2 transações no mesmo ciclo.
-    // Ordem adotada:
-    // 1) writeback em W  -> instrução mais antiga
-    // 2) store em M      -> instrução mais nova
+    // Ordem adotada (ordem arquitetural/programa):
+    // 1) evento em W (branch puro ou writeback)
+    // 2) store em M
     // ------------------------------------------------------------
     task run_phase(uvm_phase phase);
         forever begin
@@ -170,12 +217,19 @@ class rv32i_monitor extends uvm_monitor;
 
             cycle_count++;
 
-            // 1) Evento de writeback em W
+            // 1) Evento mais antigo: estágio W
+            //    1a) branch puro em W
+            if (!vif.mon_cb.regwrite_w_mon &&
+                is_branch_instr(vif.mon_cb.instr_commit_mon)) begin
+                publish_branch_event();
+            end
+
+            //    1b) writeback em W
             if (vif.mon_cb.regwrite_w_mon) begin
                 publish_writeback_event();
             end
 
-            // 2) Evento de store em M
+            // 2) Evento mais novo: estágio M
             if (vif.mon_cb.write_enable_m_mon != 4'b0000) begin
                 publish_store_event();
             end

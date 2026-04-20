@@ -17,7 +17,7 @@ module pipelined_tb();
     // Bloco de Estímulos
     initial begin
         // Inicialização
-        string prog_file = "../tb/programs/phase3/mem/phase3_sign_zero_ext.mem";
+        string prog_file = "../tb/programs/phase6/mem/riscvtest.mem";
         $readmemh(prog_file, dut.u_instruction_memory.instrmem);
 
         clk = 0;

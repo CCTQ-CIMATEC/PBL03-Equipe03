@@ -104,4 +104,74 @@ module rv32i_tb;
         run_test();
     end
 
+    final begin
+        display_registers();
+        display_mem();
+    end
+
+    function void display_registers();
+        $display("--------------------------------------------------");
+        $display("Resultados finais:");
+        $display("x1 = %0d", dut.u_reg_file_n.rf[1]);
+        $display("x2 = %0d", dut.u_reg_file_n.rf[2]);
+        $display("x3 = %0d", dut.u_reg_file_n.rf[3]);
+        $display("x4 = %0d", dut.u_reg_file_n.rf[4]);
+        $display("x5 = %0d", dut.u_reg_file_n.rf[5]);
+        $display("x6 = %0d", dut.u_reg_file_n.rf[6]);
+        $display("x7 = %0d", dut.u_reg_file_n.rf[7]);
+        $display("x8 = %0d", dut.u_reg_file_n.rf[8]);
+        $display("x9 = %0d", dut.u_reg_file_n.rf[9]);
+        $display("x10 = %0d", dut.u_reg_file_n.rf[10]);
+        $display("x11 = %0d", dut.u_reg_file_n.rf[11]);
+        $display("x12 = %0d", dut.u_reg_file_n.rf[12]);
+        $display("x13 = %0d", dut.u_reg_file_n.rf[13]);
+        $display("x14 = %0d", dut.u_reg_file_n.rf[14]);
+        $display("x15 = %0d", dut.u_reg_file_n.rf[15]);
+        $display("x16 = %0d", dut.u_reg_file_n.rf[16]);
+        $display("x17 = %0d", dut.u_reg_file_n.rf[17]);
+        $display("x18 = %0d", dut.u_reg_file_n.rf[18]);
+        $display("x19 = %0d", dut.u_reg_file_n.rf[19]);
+        $display("x20 = %0d", dut.u_reg_file_n.rf[20]);
+        $display("x21 = %0d", dut.u_reg_file_n.rf[21]);
+        $display("x22 = %0d", dut.u_reg_file_n.rf[22]);
+        $display("x23 = %0d", dut.u_reg_file_n.rf[23]);
+        $display("x24 = %0d", dut.u_reg_file_n.rf[24]);
+        $display("x25 = %0d", dut.u_reg_file_n.rf[25]);
+        $display("x26 = %0d", dut.u_reg_file_n.rf[26]);
+        $display("x27 = %0d", dut.u_reg_file_n.rf[27]);
+        $display("x28 = %0d", dut.u_reg_file_n.rf[28]);
+        $display("x29 = %0d", dut.u_reg_file_n.rf[29]);
+        $display("x30 = %0d", dut.u_reg_file_n.rf[30]);
+        $display("x31 = %0d", dut.u_reg_file_n.rf[31]);
+        $display("PC final: %h", dut.pc);
+        $display("--------------------------------------------------");
+    endfunction
+
+    localparam int DATA_MEM_WORDS = $size(dut.u_data_memory.datamem);
+
+    bit touched_mem [0:DATA_MEM_WORDS-1];
+
+    always @(posedge clk) begin
+        if (rst_n && dut.writeenableM != 4'b0000) begin
+            int idx;
+            idx = dut.aluresultM >> 2;
+
+            if (idx >= 0 && idx < DATA_MEM_WORDS) begin
+                touched_mem[idx] = 1'b1;
+            end
+        end
+    end
+
+     function void display_mem();
+        $display("--------------------------------------------------");
+        $display("Celulas de memoria escritas no teste:");
+        for (int i = 0; i < DATA_MEM_WORDS; i++) begin
+            if (touched_mem[i]) begin
+                $display("Mem[%0d] @0x%08h = 0x%08h",
+                        i, i*4, dut.u_data_memory.datamem[i]);
+            end
+        end
+        $display("--------------------------------------------------");
+    endfunction
+
 endmodule
