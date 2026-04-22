@@ -43,7 +43,7 @@
 ./configure \
   --top rv32i_tb \
   --test rv32i_phase2_test \
-  --vivado "--R --testplusarg PROG=../tb/programs/phase2/mem/phase2_full.mem --testplusarg MAX_INSTR=22 --testplusarg START_PC=0x00000000"
+  --vivado "--R --testplusarg PROG=../tb/programs/phase2/mem/phase2_full.mem --testplusarg MAX_INSTR=28 --testplusarg START_PC=0x00000000"
 ```
 
 ---
