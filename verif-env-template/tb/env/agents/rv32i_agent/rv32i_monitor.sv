@@ -18,6 +18,16 @@ class rv32i_monitor extends uvm_monitor;
     uvm_analysis_port #(rv32i_commit_tr) commit_ap;
 
     // ------------------------------------------------------------
+    // Analysis port adicional para checker
+    // O checker recebe:
+    // - store no estágio M
+    // - writeback no estágio W
+    // - branch puro em W
+    // - eventos de hazard para fase 5
+    // ------------------------------------------------------------
+    uvm_analysis_port #(rv32i_commit_tr) checker_ap;
+
+    // ------------------------------------------------------------
     // Contador de ciclos só para debug/rastreabilidade
     // ------------------------------------------------------------
     longint unsigned cycle_count;
@@ -28,6 +38,7 @@ class rv32i_monitor extends uvm_monitor;
     function new(string name = "rv32i_monitor", uvm_component parent = null);
         super.new(name, parent);
         commit_ap   = new("commit_ap", this);
+        checker_ap  = new("checker_ap", this);
         cycle_count = 0;
     endfunction
 
@@ -52,13 +63,66 @@ class rv32i_monitor extends uvm_monitor;
 
         tr.stallF      = vif.mon_cb.stallF_mon;
         tr.stallD      = vif.mon_cb.stallD_mon;
+        tr.flushD      = vif.mon_cb.flushD_mon;
         tr.flushE      = vif.mon_cb.flushE_mon;
+
+        tr.fowardAE    = vif.mon_cb.fowardAE_mon;
+        tr.fowardBE    = vif.mon_cb.fowardBE_mon;
 
         tr.pc_fetch    = vif.mon_cb.pc_fetch_mon;
         tr.instr_fetch = vif.mon_cb.instr_fetch_mon;
         tr.instr_dec   = vif.mon_cb.instr_decode_mon;
         tr.instr_ex    = vif.mon_cb.instr_execute_mon;
     endfunction
+
+    // ------------------------------------------------------------
+    // Publica evento de hazard observado no ciclo
+    // Vai apenas para o checker, nunca para o scoreboard
+    // ------------------------------------------------------------
+    task publish_hazard_event();
+        rv32i_commit_tr tr;
+
+        if (!(vif.mon_cb.stallF_mon ||
+              vif.mon_cb.stallD_mon ||
+              vif.mon_cb.flushD_mon ||
+              vif.mon_cb.flushE_mon ||
+              (vif.mon_cb.fowardAE_mon != 2'b00) ||
+              (vif.mon_cb.fowardBE_mon != 2'b00))) begin
+            return;
+        end
+
+        tr = rv32i_commit_tr::type_id::create(
+                $sformatf("hazard_tr_%0d", cycle_count), this);
+
+        tr.cycle     = cycle_count;
+        tr.evt_kind  = RV32I_EVT_HAZARD;
+
+        // Contexto do ciclo para debug/checker
+        tr.pc        = vif.mon_cb.pc_decode_mon;
+        tr.instr     = vif.mon_cb.instr_decode_mon;
+
+        tr.regwrite  = 1'b0;
+        tr.rd_addr   = 5'd0;
+        tr.rd_data   = 32'h0000_0000;
+
+        tr.memwrite  = 1'b0;
+        tr.mem_addr  = 32'h0000_0000;
+        tr.mem_wdata = 32'h0000_0000;
+        tr.mem_wmask = 4'b0000;
+
+        fill_debug_fields(tr);
+
+        checker_ap.write(tr);
+
+        `uvm_info("RV32I_MON",
+            $sformatf(
+                "HAZARD cycle=%0d instrD=%08h instrE=%08h stallF=%0b stallD=%0b flushD=%0b flushE=%0b fowardAE=%02b fowardBE=%02b",
+                tr.cycle, tr.instr, tr.instr_ex, tr.stallF, tr.stallD,
+                tr.flushD, tr.flushE, tr.fowardAE, tr.fowardBE
+            ),
+            UVM_MEDIUM
+        )
+    endtask
 
     // ------------------------------------------------------------
     // Publica evento de store observado no estágio M
@@ -71,6 +135,7 @@ class rv32i_monitor extends uvm_monitor;
                 $sformatf("store_tr_%0d", cycle_count), this);
 
         tr.cycle     = cycle_count;
+        tr.evt_kind  = RV32I_EVT_STORE;
 
         // Evento arquitetural do estágio M
         tr.pc        = vif.mon_cb.pc_memory_mon;
@@ -90,12 +155,14 @@ class rv32i_monitor extends uvm_monitor;
         fill_debug_fields(tr);
 
         commit_ap.write(tr);
+        checker_ap.write(tr);
 
         `uvm_info("RV32I_MON",
             $sformatf(
-                "STORE  cycle=%0d pc=%08h instr=%08h mem_addr=%08h mem_wdata=%08h mem_wmask=%04b x0=%08h stallF=%0b stallD=%0b flushE=%0b",
+                "STORE  cycle=%0d pc=%08h instr=%08h mem_addr=%08h mem_wdata=%08h mem_wmask=%04b x0=%08h stallF=%0b stallD=%0b flushD=%0b flushE=%0b fowardAE=%02b fowardBE=%02b",
                 tr.cycle, tr.pc, tr.instr, tr.mem_addr, tr.mem_wdata,
-                tr.mem_wmask, tr.x0_value, tr.stallF, tr.stallD, tr.flushE
+                tr.mem_wmask, tr.x0_value, tr.stallF, tr.stallD,
+                tr.flushD, tr.flushE, tr.fowardAE, tr.fowardBE
             ),
             UVM_MEDIUM
         )
@@ -121,6 +188,7 @@ class rv32i_monitor extends uvm_monitor;
                 $sformatf("branch_tr_%0d", cycle_count), this);
 
         tr.cycle     = cycle_count;
+        tr.evt_kind  = RV32I_EVT_COMMIT;
         tr.pc        = vif.mon_cb.pc_commit_mon;
         tr.instr     = vif.mon_cb.instr_commit_mon;
 
@@ -136,12 +204,14 @@ class rv32i_monitor extends uvm_monitor;
         fill_debug_fields(tr);
 
         commit_ap.write(tr);
+        checker_ap.write(tr);
 
         `uvm_info("RV32I_MON",
             $sformatf(
-                "BRANCH cycle=%0d pc=%08h instr=%08h x0=%08h stallF=%0b stallD=%0b flushE=%0b",
+                "BRANCH cycle=%0d pc=%08h instr=%08h x0=%08h stallF=%0b stallD=%0b flushD=%0b flushE=%0b fowardAE=%02b fowardBE=%02b",
                 tr.cycle, tr.pc, tr.instr, tr.x0_value,
-                tr.stallF, tr.stallD, tr.flushE
+                tr.stallF, tr.stallD, tr.flushD, tr.flushE,
+                tr.fowardAE, tr.fowardBE
             ),
             UVM_MEDIUM
         )
@@ -161,6 +231,7 @@ class rv32i_monitor extends uvm_monitor;
                 $sformatf("commit_tr_%0d", cycle_count), this);
 
         tr.cycle     = cycle_count;
+        tr.evt_kind  = RV32I_EVT_COMMIT;
 
         // Evento arquitetural do estágio W
         tr.pc        = vif.mon_cb.pc_commit_mon;
@@ -179,12 +250,14 @@ class rv32i_monitor extends uvm_monitor;
         fill_debug_fields(tr);
 
         commit_ap.write(tr);
+        checker_ap.write(tr);
 
         `uvm_info("RV32I_MON",
             $sformatf(
-                "COMMIT cycle=%0d pc=%08h instr=%08h rd=x%0d data=%08h x0=%08h stallF=%0b stallD=%0b flushE=%0b",
+                "COMMIT cycle=%0d pc=%08h instr=%08h rd=x%0d data=%08h x0=%08h stallF=%0b stallD=%0b flushD=%0b flushE=%0b fowardAE=%02b fowardBE=%02b",
                 tr.cycle, tr.pc, tr.instr, tr.rd_addr, tr.rd_data,
-                tr.x0_value, tr.stallF, tr.stallD, tr.flushE
+                tr.x0_value, tr.stallF, tr.stallD, tr.flushD, tr.flushE,
+                tr.fowardAE, tr.fowardBE
             ),
             UVM_MEDIUM
         )
@@ -216,6 +289,10 @@ class rv32i_monitor extends uvm_monitor;
             end
 
             cycle_count++;
+
+            // 0) Evento de hazard do ciclo
+            //    Publicado apenas para o checker
+            publish_hazard_event();
 
             // 1) Evento mais antigo: estágio W
             //    1a) branch puro em W

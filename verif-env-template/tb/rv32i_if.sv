@@ -43,7 +43,10 @@ interface rv32i_if (
     // ============================================================
     logic        stallF_mon;
     logic        stallD_mon;
+    logic        flushD_mon;
     logic        flushE_mon;
+    logic [1:0]  fowardAE_mon;
+    logic [1:0]  fowardBE_mon;
 
     // ============================================================
     // Monitoramento de memória
@@ -82,7 +85,10 @@ interface rv32i_if (
 
         input stallF_mon;
         input stallD_mon;
+        input flushD_mon;
         input flushE_mon;
+        input fowardAE_mon;
+        input fowardBE_mon;
 
         input alu_result_m_mon;
         input write_data_m_mon;
