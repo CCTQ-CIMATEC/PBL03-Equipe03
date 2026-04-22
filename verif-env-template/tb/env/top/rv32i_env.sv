@@ -42,7 +42,9 @@ class rv32i_env extends uvm_env;
 
         // Reference model -> esperado
         ref_model.exp_ap.connect(scoreboard.exp_fifo.analysis_export);
-        monitor.commit_ap.connect(checker_h.analysis_export);
+
+        // Checker recebe o canal expandido
+        monitor.checker_ap.connect(checker_h.analysis_export);
     endfunction
 
     // ------------------------------------------------------------

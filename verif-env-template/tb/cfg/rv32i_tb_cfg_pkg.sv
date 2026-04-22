@@ -20,6 +20,9 @@ package rv32i_tb_cfg_pkg;
     // phase 4 parameters
     localparam string RV32I_PHASE4_PROG_FILE = "../tb/programs/phase4/mem/phase4_full.mem";
 
+    // phase 5 parameters
+    localparam string RV32I_PHASE5_PROG_FILE = "../tb/programs/phase5/mem/phase5_full.mem";
+    
 endpackage
 
 `endif

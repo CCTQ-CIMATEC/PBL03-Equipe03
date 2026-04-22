@@ -294,6 +294,7 @@ class rv32i_ref_model extends uvm_component;
         bit [31:0] imm_s;
         bit [31:0] imm_b;
         bit [31:0] imm_j;
+        bit [31:0] imm_u;
         bit [4:0]  shamt_i;
 
         bit [31:0] result;
@@ -319,6 +320,7 @@ class rv32i_ref_model extends uvm_component;
             imm_s   = sext12({instr[31:25], instr[11:7]});
             imm_b   = imm_b_from_instr(instr);
             imm_j   = imm_j_from_instr(instr);
+            imm_u   = {instr[31:12], 12'b0};
             shamt_i = instr[24:20];
 
             // Se pegou X/Z, interrompe para evitar lixo
@@ -343,6 +345,50 @@ class rv32i_ref_model extends uvm_component;
 
                 tr = rv32i_commit_tr::type_id::create(
                         $sformatf("exp_addi_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+            end
+
+            // SLTI
+            else if ((opcode == 7'b0010011) && (funct3 == 3'b010)) begin
+                result = ($signed(regs_model[rs1]) < $signed(imm_i)) ? 32'd1 : 32'd0;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_slti_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+            end
+
+            // SLTIU
+            else if ((opcode == 7'b0010011) && (funct3 == 3'b011)) begin
+                result = (regs_model[rs1] < imm_i) ? 32'd1 : 32'd0;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_sltiu_%0d", i), this);
 
                 init_tr_defaults(tr, i, pc_model, instr);
 
@@ -481,6 +527,54 @@ class rv32i_ref_model extends uvm_component;
 
                 tr = rv32i_commit_tr::type_id::create(
                         $sformatf("exp_srai_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+            end
+
+            // ====================================================
+            // U-TYPE
+            // ====================================================
+
+            // AUIPC
+            else if (opcode == 7'b0010111) begin
+                result = pc_model + imm_u;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_auipc_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+            end
+
+            // LUI
+            else if (opcode == 7'b0110111) begin
+                result = imm_u;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_lui_%0d", i), this);
 
                 init_tr_defaults(tr, i, pc_model, instr);
 
@@ -652,6 +746,54 @@ class rv32i_ref_model extends uvm_component;
 
                 tr = rv32i_commit_tr::type_id::create(
                         $sformatf("exp_sub_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+            end
+
+            // SLT
+            else if ((opcode == 7'b0110011) &&
+                     (funct3 == 3'b010)     &&
+                     (funct7 == 7'b0000000)) begin
+                result = ($signed(regs_model[rs1]) < $signed(regs_model[rs2])) ? 32'd1 : 32'd0;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_slt_%0d", i), this);
+
+                init_tr_defaults(tr, i, pc_model, instr);
+
+                tr.regwrite = 1'b1;
+                tr.rd_addr  = rd;
+                tr.rd_data  = result;
+
+                if (rd != 5'd0)
+                    regs_model[rd] = result;
+
+                regs_model[0] = 32'h0000_0000;
+                tr.x0_value   = regs_model[0];
+
+                exp_ap.write(tr);
+            end
+
+            // SLTU
+            else if ((opcode == 7'b0110011) &&
+                     (funct3 == 3'b011)     &&
+                     (funct7 == 7'b0000000)) begin
+                result = (regs_model[rs1] < regs_model[rs2]) ? 32'd1 : 32'd0;
+
+                tr = rv32i_commit_tr::type_id::create(
+                        $sformatf("exp_sltu_%0d", i), this);
 
                 init_tr_defaults(tr, i, pc_model, instr);
 
