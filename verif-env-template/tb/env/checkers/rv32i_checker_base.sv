@@ -69,6 +69,16 @@ class rv32i_checker_base extends uvm_subscriber #(rv32i_commit_tr);
                (instr[14:12] == 3'b100);
     endfunction
 
+    function bit is_slti_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b0010011) &&
+               (instr[14:12] == 3'b010);
+    endfunction
+
+    function bit is_sltiu_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b0010011) &&
+               (instr[14:12] == 3'b011);
+    endfunction
+
     function bit is_slli_instr(bit [31:0] instr);
         return (instr[6:0]   == 7'b0010011) &&
                (instr[14:12] == 3'b001)     &&
@@ -105,6 +115,18 @@ class rv32i_checker_base extends uvm_subscriber #(rv32i_commit_tr);
                (instr[31:25] == 7'b0000000);
     endfunction
 
+    function bit is_slt_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b0110011) &&
+               (instr[14:12] == 3'b010)     &&
+               (instr[31:25] == 7'b0000000);
+    endfunction
+
+    function bit is_sltu_instr(bit [31:0] instr);
+        return (instr[6:0]   == 7'b0110011) &&
+               (instr[14:12] == 3'b011)     &&
+               (instr[31:25] == 7'b0000000);
+    endfunction
+
     function bit is_sll_instr(bit [31:0] instr);
         return (instr[6:0]   == 7'b0110011) &&
                (instr[14:12] == 3'b001)     &&
@@ -121,6 +143,14 @@ class rv32i_checker_base extends uvm_subscriber #(rv32i_commit_tr);
         return (instr[6:0]   == 7'b0110011) &&
                (instr[14:12] == 3'b101)     &&
                (instr[31:25] == 7'b0100000);
+    endfunction
+
+    function bit is_lui_instr(bit [31:0] instr);
+        return (instr[6:0] == 7'b0110111);
+    endfunction
+
+    function bit is_auipc_instr(bit [31:0] instr);
+        return (instr[6:0] == 7'b0010111);
     endfunction
 
     /***************************
